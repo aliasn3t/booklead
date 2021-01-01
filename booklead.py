@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import argparse
+import codecs
 import errno
 import hashlib
 import json
@@ -38,6 +39,11 @@ user_agents = [
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
     'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0'
 ]
+
+
+def cut_bom(s: str):
+    bom = codecs.BOM_UTF8.decode("utf-8")
+    return s[len(bom):] if s.startswith(bom) else s
 
 
 def to_float(s: str, def_val=0.0):
@@ -193,10 +199,8 @@ def main(args):
             urls.append(args.url)
         if args.list:
             with open(args.list) as fp:
-                line = fp.readline()
-                while line:
-                    urls.append(line.strip())
-                    line = fp.readline()
+                urls.extend([line.strip() for line in fp])
+        urls = list(filter(bool, map(lambda x: cut_bom(x).strip(), urls)))
 
         sys.stdout.write(f'Ссылок для загрузки - {len(urls)}')
 
