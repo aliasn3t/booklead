@@ -97,11 +97,17 @@ def saveImage(url, img_id, folder, ext):
     if downloaded_last_time and timeout_btw_requests:
         time.sleep(timeout_btw_requests)
 
+    downloaded_last_time = True  # перед попыткой скачивания чтобы не нафлудить в случае массовых ошибок
     response = requests.get(url, stream=True, headers=headers)
     if response.ok:
+        content_type: str = response.headers.get('content-type')
+        if content_type and not content_type.lower().startswith('image/'):
+            sys.stdout.write(
+                f'\rПредупреждение: кажется, то что скачалось с адреса {url} не является изображением: {content_type}\n')
         with open(image_path, 'wb') as page_file:
             shutil.copyfileobj(response.raw, page_file)
-    downloaded_last_time = True
+    else:
+        sys.stdout.write(f'\rОшибка: не удалось скачать файл {url} - ошибка {response.status_code} {response.reason}\n')
     return True
 
 
