@@ -89,7 +89,7 @@ def saveImage(url, img_id, folder, ext):
     }
 
     response = requests.get(url, stream=True, headers=headers)
-    image_short = '%d.%s' % (img_id, ext)
+    image_short = '%05d.%s' % (img_id, ext)
     image_path = os.path.join(DOWNLOADS_DIR, folder, image_short)
     mkdirs_for_regular_file(image_path)
 
