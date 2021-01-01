@@ -7,6 +7,7 @@ import os
 import random
 import shutil
 import sys
+import time
 import urllib.parse
 
 import img2pdf
@@ -14,6 +15,9 @@ import requests
 from bs4 import BeautifulSoup
 
 DOWNLOADS_DIR = 'downloads'
+
+timeout_btw_requests = 0
+downloaded_last_time = False
 
 domains = {
     'elib.shpl.ru': 'eshplDl',
@@ -41,6 +45,13 @@ user_agents = [
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
     'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0'
 ]
+
+
+def to_float(s: str, def_val=0.0):
+    try:
+        return float(s)
+    except ValueError:
+        return def_val
 
 
 def md5_hex(s: str):
@@ -83,10 +94,13 @@ def mkdirs_for_regular_file(filename: str):
 
 
 def saveImage(url, img_id, folder, ext):
+    global downloaded_last_time, timeout_btw_requests
+
     image_short = '%05d.%s' % (img_id, ext)
     image_path = os.path.join(DOWNLOADS_DIR, folder, image_short)
 
     if os.path.exists(image_path) and os.stat(image_path).st_size > 0:
+        downloaded_last_time = False
         return False
 
     mkdirs_for_regular_file(image_path)
@@ -96,39 +110,15 @@ def saveImage(url, img_id, folder, ext):
         'Referer': url,
     }
 
+    if downloaded_last_time and timeout_btw_requests:
+        time.sleep(timeout_btw_requests)
+
     response = requests.get(url, stream=True, headers=headers)
     if response.ok:
         with open(image_path, 'wb') as page_file:
             shutil.copyfileobj(response.raw, page_file)
+    downloaded_last_time = True
     return True
-
-
-def main(args):
-    urls = []
-
-    try:
-        if args.url:
-            urls.append(args.url)
-        if args.list:
-            with open(args.list) as fp:
-                line = fp.readline()
-                while line:
-                    urls.append(line.strip())
-                    line = fp.readline()
-
-        sys.stdout.write('Ссылок для загрузки - {}'.format(len(urls)))
-
-        for url in urls:
-            load = initLoader(url)
-            if not load:
-                sys.stdout.write('\nСсылка: {}\n - Ошибка загрузки!'.format(url))
-            elif args.pdf.lower() == 'y':
-                sys.stdout.write('\n ─ Создание PDF...')
-                img_folder_short, imgs_ext = load
-                img_folder_full = os.path.join(DOWNLOADS_DIR, img_folder_short)
-                makePdf(img_folder_full, imgs_ext)
-    except KeyboardInterrupt:
-        sys.stdout.write('\nЗагрузка прервана!')
 
 
 def eshplDl(url):
@@ -185,11 +175,44 @@ def prlDl(url):
         sys.stdout.write(str(e))
 
 
+def main(args):
+    try:
+        urls = []
+        if args.timeout:
+            global timeout_btw_requests
+            timeout_btw_requests = to_float(args.timeout)
+        if args.url:
+            urls.append(args.url)
+        if args.list:
+            with open(args.list) as fp:
+                line = fp.readline()
+                while line:
+                    urls.append(line.strip())
+                    line = fp.readline()
+
+        sys.stdout.write('Ссылок для загрузки - {}'.format(len(urls)))
+
+        for url in urls:
+            load = initLoader(url)
+            if not load:
+                sys.stdout.write('\nСсылка: {}\n - Ошибка загрузки!'.format(url))
+            elif args.pdf.lower() == 'y':
+                sys.stdout.write('\n ─ Создание PDF...')
+                img_folder_short, imgs_ext = load
+                img_folder_full = os.path.join(DOWNLOADS_DIR, img_folder_short)
+                makePdf(img_folder_full, imgs_ext)
+    except KeyboardInterrupt:
+        sys.stdout.write('\nЗагрузка прервана!')
+    except Exception as e:
+        sys.stdout.write(f'\nОшибка: {e}')
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='booklead - Загрузчик книг из интернет-библиотек')
     parser.add_argument('--pdf', dest='pdf', default='', metavar='y', help='Создавать PDF-версии книг')
     parser.add_argument('--list', dest='list', default='', metavar='"list.txt"', help='Файл со списком книг')
     parser.add_argument('--url', dest='url', default='', metavar='"http://..."', help='Ссылка на книгу')
+    parser.add_argument('--timeout', dest='timeout', default='0', metavar='1.0', help='Пауза между HTTP-запросами в секундах')
     args = parser.parse_args()
     if args.url or args.list:
         main(args)
