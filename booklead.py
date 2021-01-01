@@ -63,11 +63,11 @@ def makePdf(folder, ext):
     pdf_path = '{}.pdf'.format(folder)
     with open(pdf_path, "wb") as pdf_file:
         img_list = []
-        for r, _, f in os.walk(folder):
-            for fname in f:
-                if not fname.endswith(ext):
-                    continue
-                img_list.append(os.path.join(r, fname))
+        for r, _, ff in os.walk(folder):
+            for fname in ff:
+                if fname.endswith(f'.{ext}'):
+                    img_list.append(os.path.join(r, fname))
+        img_list.sort()
         pdf = img2pdf.convert(img_list)
         pdf_file.write(pdf)
 
