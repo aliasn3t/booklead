@@ -19,13 +19,6 @@ DOWNLOADS_DIR = 'downloads'
 timeout_btw_requests = 0
 downloaded_last_time = False
 
-domains = {
-    'elib.shpl.ru': 'eshplDl',
-    'docs.historyrussia.org': 'eshplDl',
-    'prlib.ru': 'prlDl',
-    'www.prlib.ru': 'prlDl'
-}
-
 eshplDl_params = {
     'quality': 8,
     'ext': 'jpg'
@@ -58,15 +51,6 @@ def md5_hex(s: str):
     md5 = hashlib.md5()
     md5.update(s.encode('utf-8'))
     return md5.hexdigest()
-
-
-def initLoader(url):
-    host = urllib.parse.urlsplit(url)
-    try:
-        return eval(domains[host.hostname] + '(url)')
-    except Exception as e:
-        sys.stdout.write(str(e))
-        return False
 
 
 def makePdf(folder, ext):
@@ -130,7 +114,7 @@ def eshplDl(url):
     # Обход 429 Too Many Requests 
     headers = {
         'User-Agent': random.choice(user_agents)
-        }
+    }
 
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -138,16 +122,13 @@ def eshplDl(url):
         if 'initDocview' in str(script):
             st = str(script)
             book_json = json.loads(st[st.find('{"'): st.find(')')])
-    try:
-        sys.stdout.write('\nCсылка: {}\n'.format(url))
-        sys.stdout.write(' ─ Каталог для загрузки: {}\n'.format(book_id))
-        for idx, page in enumerate(book_json['pages']):
-            page_url = 'http://{}/pages/{}/zooms/{}'.format(domain, page['id'], quality)
-            saveImage(page_url, idx + 1, book_id, ext)
-            sys.stdout.write('\r ─ Прогресс: {} из {} стр.'.format(idx + 1, len(book_json['pages'])))
-        return (book_id, ext)
-    except Exception as e:
-        sys.stdout.write(str(e))
+    sys.stdout.write('\nCсылка: {}\n'.format(url))
+    sys.stdout.write(' ─ Каталог для загрузки: {}\n'.format(book_id))
+    for idx, page in enumerate(book_json['pages']):
+        page_url = 'http://{}/pages/{}/zooms/{}'.format(domain, page['id'], quality)
+        saveImage(page_url, idx + 1, book_id, ext)
+        sys.stdout.write('\r ─ Прогресс: {} из {} стр.'.format(idx + 1, len(book_json['pages'])))
+    return book_id, ext
 
 
 def prlDl(url):
@@ -161,18 +142,39 @@ def prlDl(url):
             book_json = json.loads(st[st.find('{"'): st.find(');')])
             book = book_json['diva']['1']['options']
     response = requests.get(book['objectData'])
+    book_data = json.loads(response.text)
+    sys.stdout.write('\nCсылка: {}\n'.format(url))
+    sys.stdout.write(' ─ Каталог для загрузки: {}\n'.format(book_data['item_title']))
+    for idx, page in enumerate(book_data['pgs']):
+        page_url = 'https://content.prlib.ru/fcgi-bin/iipsrv.fcgi?FIF={}/{}&WID={}&CVT=jpeg'.format(
+            book['imageDir'], page['f'], page['d'][len(page['d']) - 1]['w'])
+        saveImage(page_url, idx + 1, book_data['item_title'], ext)
+        sys.stdout.write('\r ─ Прогресс: {} из {} стр.'.format(idx + 1, len(book_data['pgs'])))
+    return book_data['item_title'], ext
+
+
+domains = {
+    'elib.shpl.ru': eshplDl,
+    'docs.historyrussia.org': eshplDl,
+    'prlib.ru': prlDl,
+    'www.prlib.ru': prlDl,
+}
+
+
+def download_book(url):
     try:
-        book_data = json.loads(response.text)
-        sys.stdout.write('\nCсылка: {}\n'.format(url))
-        sys.stdout.write(' ─ Каталог для загрузки: {}\n'.format(book_data['item_title']))
-        for idx, page in enumerate(book_data['pgs']):
-            page_url = 'https://content.prlib.ru/fcgi-bin/iipsrv.fcgi?FIF={}/{}&WID={}&CVT=jpeg'.format(
-                book['imageDir'], page['f'], page['d'][len(page['d']) - 1]['w'])
-            saveImage(page_url, idx + 1, book_data['item_title'], ext)
-            sys.stdout.write('\r ─ Прогресс: {} из {} стр.'.format(idx + 1, len(book_data['pgs'])))
-        return (book_data['item_title'], ext)
+        host = urllib.parse.urlsplit(url)
+        if not host.hostname:
+            sys.stdout.write(f'\nОшибка: Некорректный урл: {url}')
+            return None
+        site_downloader = domains.get(host.hostname)
+        if not site_downloader:
+            sys.stdout.write(f'\nОшибка: Домен {host.hostname} не поддерживается')
+            return None
+        return site_downloader(url)
     except Exception as e:
-        sys.stdout.write(str(e))
+        sys.stdout.write(f'\nОшибка: {e}')
+        return None
 
 
 def main(args):
@@ -190,17 +192,16 @@ def main(args):
                     urls.append(line.strip())
                     line = fp.readline()
 
-        sys.stdout.write('Ссылок для загрузки - {}'.format(len(urls)))
+        sys.stdout.write(f'Ссылок для загрузки - {len(urls)}')
 
         for url in urls:
-            load = initLoader(url)
-            if not load:
-                sys.stdout.write('\nСсылка: {}\n - Ошибка загрузки!'.format(url))
-            elif args.pdf.lower() == 'y':
-                sys.stdout.write('\n ─ Создание PDF...')
-                img_folder_short, imgs_ext = load
-                img_folder_full = os.path.join(DOWNLOADS_DIR, img_folder_short)
-                makePdf(img_folder_full, imgs_ext)
+            load = download_book(url)
+            if load:
+                if args.pdf.lower() in ['y', 'yes']:
+                    sys.stdout.write('\n ─ Создание PDF...')
+                    img_folder_short, img_ext = load
+                    img_folder_full = os.path.join(DOWNLOADS_DIR, img_folder_short)
+                    makePdf(img_folder_full, img_ext)
     except KeyboardInterrupt:
         sys.stdout.write('\nЗагрузка прервана!')
     except Exception as e:
@@ -212,7 +213,8 @@ if __name__ == '__main__':
     parser.add_argument('--pdf', dest='pdf', default='', metavar='y', help='Создавать PDF-версии книг')
     parser.add_argument('--list', dest='list', default='', metavar='"list.txt"', help='Файл со списком книг')
     parser.add_argument('--url', dest='url', default='', metavar='"http://..."', help='Ссылка на книгу')
-    parser.add_argument('--timeout', dest='timeout', default='0', metavar='1.0', help='Пауза между HTTP-запросами в секундах')
+    parser.add_argument('--timeout', dest='timeout', default='0', metavar='1.0',
+                        help='Пауза между HTTP-запросами в секундах')
     args = parser.parse_args()
     if args.url or args.list:
         main(args)
