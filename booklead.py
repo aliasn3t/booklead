@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import hashlib
 import sys
 import requests
 import random
@@ -39,6 +39,12 @@ user_agents = [
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
     'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0'
 ]
+
+
+def md5_hex(s: str):
+    md5 = hashlib.md5()
+    md5.update(s.encode('utf-8'))
+    return md5.hexdigest()
 
 
 def initLoader(url):
@@ -111,7 +117,7 @@ def main(args):
 
 def eshplDl(url):
     ext = eshplDl_params['ext']
-    book_id = str(uuid.uuid4()).upper()
+    book_id = md5_hex(url).upper()
     domain = urllib.parse.urlsplit(url).netloc
     quality = eshplDl_params['quality']
 
