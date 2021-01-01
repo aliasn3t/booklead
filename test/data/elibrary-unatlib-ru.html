@@ -1,0 +1,604 @@
+﻿
+<!DOCTYPE html>
+            <!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+            <!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+            <!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+            <!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+            <head><META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+<title>Коммуналэн манифестэз</title>
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<meta content="width=device-width,initial-scale=1" name="viewport">
+<link rel="shortcut icon" href="/themes/Mirage2/images/favicon.ico">
+<link rel="apple-touch-icon" href="/themes/Mirage2/images/apple-touch-icon.png">
+<meta name="Generator" content="DSpace 6.3-SNAPSHOT">
+<link href="/themes/Mirage2/styles/main.css" rel="stylesheet">
+<link type="application/opensearchdescription+xml" rel="search" href="http://elibrary.unatlib.ru:80/open-search/description.xml" title="DSpace">
+<script>
+                //Clear default text of empty text areas on focus
+                function tFocus(element)
+                {
+                if (element.value == ' '){element.value='';}
+                }
+                //Clear default text of empty text areas on submit
+                function tSubmit(form)
+                {
+                var defaultedElements = document.getElementsByTagName("textarea");
+                for (var i=0; i != defaultedElements.length; i++){
+                if (defaultedElements[i].value == ' '){
+                defaultedElements[i].value='';}}
+                }
+                //Disable pressing 'enter' key to submit a form (otherwise pressing 'enter' causes a submission to start over)
+                function disableEnterKey(e)
+                {
+                var key;
+
+                if(window.event)
+                key = window.event.keyCode;     //Internet Explorer
+                else
+                key = e.which;     //Firefox and Netscape
+
+                if(key == 13)  //if "Enter" pressed, then disable!
+                return false;
+                else
+                return true;
+                }
+            </script><!--[if lt IE 9]>
+                <script src="/themes/Mirage2/vendor/html5shiv/dist/html5shiv.js"> </script>
+                <script src="/themes/Mirage2/vendor/respond/dest/respond.min.js"> </script>
+                <![endif]--><script src="/themes/Mirage2/vendor/modernizr/modernizr.js"> </script><script crossorigin="anonymous" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<link rel="stylesheet" href="/vfsrch/search.min.css">
+<script src="/vfsrch/semantic.min.js"> </script><script src="/vfsrch/api.min.js"> </script><script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js"></script><script>
+$.noConflict();
+jQuery(document).ready(function($) {
+$('.ui.search')
+  .search({
+    type          : 'category',
+    minCharacters : 3,
+    maxResults : 20,
+    apiSettings   : {
+      onResponse: function(githubResponse) {
+        var
+          response = {
+            results : {},
+          }
+        ;
+        // translate GitHub API response to work with search
+        $.each(githubResponse.records, function(index, item) {
+          var
+      idrec = item.id.split("-",1) || 'Unknown',
+            maxResults = 20;
+          if(index >= maxResults) {
+            return false;
+          }
+
+          // create new idrec category
+          if(response.results[idrec] === undefined) {
+            response.results[idrec] = {
+              name: idrec,
+              results : []
+            };
+          }
+          // add result to category
+          response.results[idrec].results.push({
+            title       : item.title,
+            description : item.description,
+            url         : item.urls[0].url
+          });
+        });
+ response["action"] = {
+      "url": "https://search.unatlib.ru/Search/Results?lookfor="+$('input.prompt').val()+"&type=AllFields&limit=20&sort=relevance",
+      "text": "Всего найдено "+githubResponse.resultCount+". Просмотреть все"
+      };
+
+   response["action1"] = {
+      "url1": "https://search.unatlib.ru/Web/Results?lookfor="+$('input.prompt').val()+"&type=AllFields&limit=20&sort=relevance",
+      "text1": "Найти в интернет проектах"
+      };
+
+selector = $(document).find('.ui.search');
+      injector = '<div class="ui divider"></div>'+
+                 '<button class="ui red button">'+
+                    'Show more options...'+
+                 '</button>';
+      selector.find('.results').append(injector);
+        return response;
+      },
+      url: "https://search.unatlib.ru/api/v1/search?sort=relevance&type=AllFields&limit=20&lookfor={query}"
+    }
+  });
+});
+
+</script>
+<link rel="schema.DCTERMS" href="http://purl.org/dc/terms/" />
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/" />
+<meta name="DC.creator" content="Маркс, Карл" />
+<meta name="DC.creator" content="Энгельс, Фридрих" />
+<meta name="DC.contributor" content="Ильин, Яков Ильич" />
+<meta name="DCTERMS.dateAccepted" content="2014-12-23T13:33:33Z" scheme="DCTERMS.W3CDTF" />
+<meta name="DCTERMS.dateAccepted" content="2017-11-29T13:05:21Z" scheme="DCTERMS.W3CDTF" />
+<meta name="DCTERMS.available" content="2014-12-23T13:33:33Z" scheme="DCTERMS.W3CDTF" />
+<meta name="DCTERMS.available" content="2017-11-29T13:05:21Z" scheme="DCTERMS.W3CDTF" />
+<meta name="DCTERMS.issued" content="1919" scheme="DCTERMS.W3CDTF" />
+<meta name="DCTERMS.bibliographicCitation" content="Маркс, Карл. Коммуналэн манифестэз : на глазовском наречии / К. Маркс и Фр. Энгельс ; под ред. Вятской секции Отдела национальностей при Вятгубисполкоме ; пер. Я. И. Ильина. - Вятка : [б. и.], 1919. - 36 с. ; 23 см. - На удмурт. яз." />
+<meta name="DC.identifier" content="uiiyl_book_075" />
+<meta name="DC.identifier" content="http://elibrary.unatlib.ru/handle/123456789/18116" scheme="DCTERMS.URI" />
+<meta name="DC.language" content="udm" xml:lang="ru_RU" scheme="DCTERMS.RFC1766" />
+<meta name="DC.subject" content="коммунистическая партия" xml:lang="ru_RU" />
+<meta name="DC.subject" content="идеологическая работа" xml:lang="ru_RU" />
+<meta name="DC.subject" content="манифест Коммунистической партии" xml:lang="ru_RU" />
+<meta name="DC.title" content="Коммуналэн манифестэз" xml:lang="ru_RU" />
+<meta name="DCTERMS.alternative" content="Коммунистический манифест" xml:lang="ru_RU" />
+<meta name="DC.type" content="Text" xml:lang="ru_RU" />
+<meta content="коммунистическая партия; идеологическая работа; манифест Коммунистической партии; Text" name="citation_keywords">
+<meta content="Коммуналэн манифестэз" name="citation_title">
+<meta content="udm" name="citation_language">
+<meta content="Маркс, Карл" name="citation_author">
+<meta content="Энгельс, Фридрих" name="citation_author">
+<meta content="http://elibrary.unatlib.ru/bitstream/123456789/18116/2/uiiyl_book_075.pdf" name="citation_pdf_url">
+<meta content="1919" name="citation_date">
+<meta content="http://elibrary.unatlib.ru/handle/123456789/18116" name="citation_abstract_html_url">
+<script src="/themes/Mirage2/scripts/audio.min.js" type="text/javascript"> </script>
+</head><body>
+<script type="text/javascript">
+	 var _gaq = _gaq || [];
+	 _gaq.push(['_setAccount', 'UA-30328783-7']);
+	 _gaq.push(['_trackPageview']);
+	  (function() {
+	    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+	</script>
+<header>
+<div role="navigation" class="navbar navbar-default navbar-static-top">
+<div class="container">
+<div class="navbar-header">
+<button data-toggle="offcanvas" class="navbar-toggle" type="button"><span class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button>
+<div class="navbar-brand dslogo">
+<a title="Официальный сайт - Национальная библиотека Удмуртской Республики" href="https://unatlib.ru"><img src="/themes/Mirage2/images/logo.png"></a><a title="НЭБ УР - Национальная электронная библиотека УР" href="/"><span>Национальная электронная библиотека Удмуртской Республики</span></a>
+</div>
+<div class="navbar-header pull-right visible-xs hidden-sm hidden-md hidden-lg">
+<ul class="nav nav-pills pull-left ">
+<li class="dropdown" id="ds-language-selection-xs">
+<button data-toggle="dropdown" class="dropdown-toggle navbar-toggle navbar-link" role="button" href="#" id="language-dropdown-toggle-xs"><b aria-hidden="true" class="visible-xs glyphicon glyphicon-globe"></b></button>
+<ul data-no-collapse="true" aria-labelledby="language-dropdown-toggle-xs" role="menu" class="dropdown-menu pull-right">
+<li role="presentation">
+<a href="http://elibrary.unatlib.ru:80/handle/123456789/18116?locale-attribute=ru">русский</a>
+</li>
+<li role="presentation" class="disabled">
+<a href="http://elibrary.unatlib.ru:80/handle/123456789/18116?locale-attribute=en">English</a>
+</li>
+</ul>
+</li>
+<li>
+<form method="get" action="/login" style="display: inline">
+<button class="navbar-toggle navbar-link"><b aria-hidden="true" class="visible-xs glyphicon glyphicon-user"></b></button>
+</form>
+</li>
+</ul>
+</div>
+</div>
+<div class="navbar-header pull-right hidden-xs">
+<img height="55" src="/themes/Mirage2/images/diplomant.png"><ul class="nav navbar-nav pull-left">
+<li class="dropdown" id="ds-language-selection">
+<a data-toggle="dropdown" class="dropdown-toggle" role="button" href="#" id="language-dropdown-toggle"><span class="hidden-xs">English&nbsp;<b class="caret"></b></span></a>
+<ul data-no-collapse="true" aria-labelledby="language-dropdown-toggle" role="menu" class="dropdown-menu pull-right">
+<li role="presentation">
+<a href="?locale-attribute=ru">русский</a>
+</li>
+<li role="presentation" class="disabled">
+<a href="?locale-attribute=en">English</a>
+</li>
+</ul>
+</li>
+</ul>
+<ul class="nav navbar-nav pull-left">
+<li>
+<a href="/login"><span class="hidden-xs">Login</span></a>
+</li>
+</ul>
+<button type="button" class="navbar-toggle visible-sm" data-toggle="offcanvas"><span class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button>
+</div>
+</div>
+</div>
+</header>
+<div class="trail-wrapper hidden-print">
+<div class="container">
+<div class="row">
+<div class="col-xs-12">
+<div class="breadcrumb dropdown visible-xs">
+<a data-toggle="dropdown" class="dropdown-toggle" role="button" href="#" id="trail-dropdown-toggle">View Item&nbsp;<b class="caret"></b></a>
+<ul aria-labelledby="trail-dropdown-toggle" role="menu" class="dropdown-menu">
+<li role="presentation">
+<a role="menuitem" href="/"><i aria-hidden="true" class="glyphicon glyphicon-home"></i>&nbsp;
+                        DSpace Home</a>
+</li>
+<li role="presentation">
+<a role="menuitem" href="/handle/123456789/12269">Удмуртский институт истории, языка и литературы  ФГБУН &laquo;УдмФИЦ УрО РАН&raquo;</a>
+</li>
+<li role="presentation">
+<a role="menuitem" href="/handle/123456789/15297">Редкая книга</a>
+</li>
+<li role="presentation" class="disabled">
+<a href="#" role="menuitem">View Item</a>
+</li>
+</ul>
+</div>
+<ul itemtype="https://schema.org/BreadcrumbList" itemscope="" id="bread_list" class="breadcrumb hidden-xs">
+<li itemtype="https://schema.org/ListItem" itemscope="" itemprop="itemListElement">
+<i aria-hidden="true" class="glyphicon glyphicon-home"></i>&nbsp;
+            <a itemprop="item" href="/"><span itemprop="name">DSpace Home</span></a>
+<meta itemprop="position" content="1">
+</li>
+<li itemtype="https://schema.org/ListItem" itemscope="" itemprop="itemListElement">
+<a itemprop="item" href="/handle/123456789/12269" class="lvlga2"><span itemprop="name">Удмуртский институт истории, языка и литературы  ФГБУН &laquo;УдмФИЦ УрО РАН&raquo;</span></a>
+<meta itemprop="position" content="2">
+</li>
+<li itemtype="https://schema.org/ListItem" itemscope="" itemprop="itemListElement">
+<a itemprop="item" href="/handle/123456789/15297" class="lvlga3"><span itemprop="name">Редкая книга</span></a>
+<meta itemprop="position" content="3">
+</li>
+<li itemtype="" itemscope="" itemprop="" class="active">View Item</li>
+</ul>
+<script>var vf46379 = bread_list.getElementsByClassName('lvlga3')[0];if(vf46379){if(vf46379.innerText == 'Весточка с фронта'){document.body.classList.add('vest_front');};}</script><script type="text/javascript">
+	    function EventBR() {
+if(document.getElementsByClassName('lvlga2')[0])
+{ var lvlga2 = document.getElementsByClassName('lvlga2')[0].innerText; }
+
+if(document.getElementsByClassName('lvlga3')[0])
+{ var lvlga3 = document.getElementsByClassName('lvlga3')[0].innerText; }
+
+if(document.getElementsByClassName('lvlga4')[0])
+{ var lvlga4 = document.getElementsByClassName('lvlga4')[0].innerText; }
+
+if(lvlga2)
+{_gaq.push(['_trackEvent',lvlga2,lvlga3,lvlga4 ]);}
+	 }
+
+  document.addEventListener("DOMContentLoaded", EventBR);
+	</script>
+</div>
+</div>
+</div>
+</div>
+<div class="hidden" id="no-js-warning-wrapper">
+<div id="no-js-warning">
+<div class="notice failure">JavaScript is disabled for your browser. Some features of this site may not work without it.</div>
+</div>
+</div>
+<div class="container" id="main-container">
+<div class="row row-offcanvas row-offcanvas-right">
+<div class="horizontal-slider clearfix">
+<div class="col-xs-12 col-sm-12 col-md-9 main-content">
+<div>
+<div id="aspect_artifactbrowser_ItemViewer_div_item-view" class="ds-static-div primary">
+<!-- External Metadata URL: cocoon://metadata/handle/123456789/18116/mets.xml-->
+<div class="item-summary-view-metadata" itemtype="http://schema.org/Book" itemscope="">
+<div id="vfrontblock"></div>
+<h1 class="page-header first-page-header" itemprop="name">Коммуналэн манифестэз</h1>
+<div class="row">
+<div class="col-sm-4 maincol">
+<div class="row">
+<div class="col-xs-6 col-sm-12">
+<div class="thumbnail" itemprop="image" itemscope="" itemtype="https://schema.org/ImageObject">
+<img id="dsshareimg" itemprop="image" class="img-thumbnail" alt="Коммуналэн манифестэз - Маркс, Карл" src="/bitstream/handle/123456789/18116/uiiyl_book_075.pdf.jpg?sequence=1&amp;isAllowed=y"><link itemprop="contentUrl" href="/bitstream/handle/123456789/18116/uiiyl_book_075.pdf.jpg?sequence=1&amp;isAllowed=y">
+</div>
+</div>
+<div style="clear:both;"></div>
+<div class="col-xs-6 col-sm-12">
+<div class="item-page-field-wrapper table word-break">
+<div class="file-metadata">
+<a onmouseover="dscookies();" id="dsview" href="/bitstream/handle/123456789/18116/uiiyl_book_075.pdf?sequence=2&amp;isAllowed=y"><i aria-hidden="true" class="glyphicon  glyphicon-file"></i> Читать онлайн (25.00Mb)</a>
+</div>
+<script>
+        var w = document.getElementById("dsview").href;
+        //var wt = document.getElementById("dsmeta").innerText;
+        var wt = document.getElementById("dsview").title;
+        var wr = w.match("\/bitstream.*pdf");
+        var wa = w.match("\/bitstream.*mp3");
+
+        if(wr){
+            document.cookie= "dsfp="+wr+";path=/";
+            document.getElementById('dsview').id = "dsview-pdf";
+            document.getElementById('dsview-pdf').setAttribute('href', '/dspace/dsview.html');
+            document.getElementById('dsview-pdf').setAttribute('target', '_blank');
+        }
+        else 
+        {
+            var aud = document.getElementsByClassName('file-metadata')[0].getElementsByClassName('audiojs')[0];
+            if (aud !='') { 
+                var st = document.getElementsByClassName('file-metadata')[0];
+                var st1 = document.getElementById("dsview").href;
+                var x = document.createElement("audio");
+                x.src      = st1;
+                document.getElementsByClassName('file-metadata')[0].appendChild(x);
+                document.getElementsByClassName('file-metadata')[0].className = "file-metadata-mp3";
+                document.getElementById('dsview').remove();
+                //document.getElementById('dsview').id = "dsview-mp3";
+
+            } 
+            else 
+            {
+            }
+        }
+
+        </script>
+</div>
+<script>
+        audiojs.events.ready(function() {
+            audiojs.createAll();
+        });
+        document.cookie = 'dsft'+'=; expires=Thu, 01-Jan-70 00:00:01 GMT;';
+        function dscookies() {
+	    document.cookie= "dsshareimg="+dsshareimg.getAttribute('src')+";path=/";
+            document.cookie= "dssharelink="+window.location.href+";path=/";
+            document.cookie= "dsft="+wt+";path=/";
+            if(wr){document.cookie= "dsfp="+wr+";path=/";}
+        }
+        dscookies();
+        </script>
+</div>
+</div>
+</div>
+<div class="col-sm-8 maincolr">
+<dl>
+<dt>Title</dt>
+<dd>Коммуналэн манифестэз</dd>
+<dt>Author</dt>
+<dd>
+<a class="link-author" href="/browse?type=author&amp;value=%D0%9C%D0%B0%D1%80%D0%BA%D1%81, %D0%9A%D0%B0%D1%80%D0%BB"><span itemprop="author">Маркс, Карл</span></a><a class="link-author" href="/browse?type=author&amp;value=%D0%AD%D0%BD%D0%B3%D0%B5%D0%BB%D1%8C%D1%81, %D0%A4%D1%80%D0%B8%D0%B4%D1%80%D0%B8%D1%85"><span itemprop="author">Энгельс, Фридрих</span></a>
+</dd>
+<dt>Date</dt>
+<dd>1919</dd>
+<dt>Subject</dt>
+<dd>
+<a href="/browse?type=subject&amp;value=%D0%BA%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D1%81%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0%D1%8F %D0%BF%D0%B0%D1%80%D1%82%D0%B8%D1%8F" title="view current subject"><span itemprop="keywords">коммунистическая партия</span></a><span>, </span><a href="/browse?type=subject&amp;value=%D0%B8%D0%B4%D0%B5%D0%BE%D0%BB%D0%BE%D0%B3%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0%D1%8F %D1%80%D0%B0%D0%B1%D0%BE%D1%82%D0%B0" title="view current subject"><span itemprop="keywords">идеологическая работа</span></a><span>, </span><a href="/browse?type=subject&amp;value=%D0%BC%D0%B0%D0%BD%D0%B8%D1%84%D0%B5%D1%81%D1%82 %D0%9A%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D1%81%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B9 %D0%BF%D0%B0%D1%80%D1%82%D0%B8%D0%B8" title="view current subject"><span itemprop="keywords">манифест Коммунистической партии</span></a>
+</dd>
+<dt>Collections</dt>
+<dd>
+<ul class="ds-referenceSet-list">
+<!-- External Metadata URL: cocoon://metadata/handle/123456789/15297/mets.xml-->
+<li>
+<a href="/handle/123456789/15297">Редкая книга</a> [97]</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="social">
+<script src="//yastatic.net/es5-shims/0.0.2/es5-shims.min.js"></script><script src="//yastatic.net/share2/share.js"></script>
+<div data-limit="7" data-services="vkontakte,facebook,odnoklassniki,twitter,viber,whatsapp,skype,telegram" class="ya-share2" id="dsshare"></div>
+<script>
+		dsshare.setAttribute('data-image', 'https://elibrary.unatlib.ru/'+dsshareimg.getAttribute('src'));
+		dsshare.setAttribute('data-description', dssharedesc.textContent.substring(0, 150));
+	    </script>
+</div>
+<div style="clear:both; margin-bottom: 20px;"></div>
+<div class="container"></div>
+<h3>Полная карточка</h3>
+<table class="ds-includeSet-table detailtable table table-striped table-hover">
+
+<tr class="ds-table-row odd ">
+<td class="label-cell">dc.contributor.author</td><td class="word-break">Маркс, Карл</td><td></td>
+</tr>
+
+<tr class="ds-table-row even ">
+<td class="label-cell">dc.contributor.author</td><td class="word-break">Энгельс, Фридрих</td><td></td>
+</tr>
+
+<tr class="ds-table-row odd ">
+<td class="label-cell">dc.contributor.other</td><td class="word-break">Ильин, Яков Ильич</td><td></td>
+</tr>
+
+<tr class="ds-table-row even ">
+<td class="label-cell">dc.date.accessioned</td><td class="word-break">2014-12-23T13:33:33Z</td><td></td>
+</tr>
+
+<tr class="ds-table-row odd ">
+<td class="label-cell">dc.date.accessioned</td><td class="word-break">2017-11-29T13:05:21Z</td><td></td>
+</tr>
+
+<tr class="ds-table-row even ">
+<td class="label-cell">dc.date.available</td><td class="word-break">2014-12-23T13:33:33Z</td><td></td>
+</tr>
+
+<tr class="ds-table-row odd ">
+<td class="label-cell">dc.date.available</td><td class="word-break">2017-11-29T13:05:21Z</td><td></td>
+</tr>
+
+<tr class="ds-table-row even ">
+<td class="label-cell">dc.date.issued</td><td class="word-break">1919</td><td></td>
+</tr>
+
+<tr class="ds-table-row odd ">
+<td class="label-cell">dc.identifier.citation</td><td class="word-break">Маркс, Карл. Коммуналэн манифестэз : на глазовском наречии / К. Маркс и Фр. Энгельс ; под ред. Вятской секции Отдела национальностей при Вятгубисполкоме ; пер. Я. И. Ильина. - Вятка : [б. и.], 1919. - 36 с. ; 23 см. - На удмурт. яз.</td><td></td>
+</tr>
+
+<tr class="ds-table-row even ">
+<td class="label-cell">dc.identifier.other</td><td class="word-break">uiiyl_book_075</td><td></td>
+</tr>
+
+<tr class="ds-table-row odd ">
+<td class="label-cell">dc.identifier.uri</td><td class="word-break">http://elibrary.unatlib.ru/handle/123456789/18116</td><td></td>
+</tr>
+
+<tr class="ds-table-row even ">
+<td class="label-cell">dc.language.iso</td><td class="word-break">udm</td><td>ru_RU</td>
+</tr>
+
+<tr class="ds-table-row odd ">
+<td class="label-cell">dc.subject</td><td class="word-break">коммунистическая партия</td><td>ru_RU</td>
+</tr>
+
+<tr class="ds-table-row even ">
+<td class="label-cell">dc.subject</td><td class="word-break">идеологическая работа</td><td>ru_RU</td>
+</tr>
+
+<tr class="ds-table-row odd ">
+<td class="label-cell">dc.subject</td><td class="word-break">манифест Коммунистической партии</td><td>ru_RU</td>
+</tr>
+
+<tr class="ds-table-row even ">
+<td class="label-cell">dc.title</td><td class="word-break">Коммуналэн манифестэз</td><td>ru_RU</td>
+</tr>
+
+<tr class="ds-table-row odd ">
+<td class="label-cell">dc.title.alternative</td><td class="word-break">Коммунистический манифест</td><td>ru_RU</td>
+</tr>
+
+<tr class="ds-table-row even ">
+<td class="label-cell">dc.type</td><td class="word-break">Text</td><td>ru_RU</td>
+</tr>
+
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="visible-xs visible-sm">
+<script>
+var dscoll = document.getElementsByClassName('ds-referenceSet-list')[0];
+var wq = dscoll.getElementsByTagName('a')[0].text;
+var we = unescape(encodeURIComponent(wq));
+var dstitle = document.getElementsByClassName('item-summary-view-metadata')[0];
+var dst1 = dstitle.getElementsByTagName('h1')[0].innerText;
+var dste = unescape(encodeURIComponent(dst1));
+document.cookie= "dsfc="+we+";path=/";
+document.cookie= "dsftitle="+dste+";path=/";
+</script>
+<footer>
+<div class="row">
+<hr>
+<div class="col-xs-7 col-sm-8">
+<div>
+<a target="_blank" href="http://www.dspace.org/" rel="nofollow">DSpace software</a> copyright&nbsp;&copy;&nbsp;2002-2016&nbsp; <a target="_blank" href="http://www.duraspace.org/" rel="nofollow">DuraSpace</a>
+</div>
+<div class="hidden-print">
+<a href="/contact">Contact Us</a> | <a href="/feedback">Send Feedback</a>
+</div>
+</div>
+<div class="col-xs-5 col-sm-4 hidden-print">
+<div class="pull-right">
+<span class="theme-by">Theme by&nbsp;</span>
+<br>
+<a href="http://atmire.com" target="_blank" title="Atmire NV" rel="nofollow"><img src="/themes/Mirage2/images/atmire-logo-small.svg" alt="Atmire NV"></a>
+</div>
+</div>
+</div>
+<a class="hidden" href="/htmlmap">&nbsp;</a>
+<p>&nbsp;</p>
+</footer>
+</div>
+</div>
+<div role="navigation" id="sidebar" class="col-xs-6 col-sm-3 sidebar-offcanvas">
+<form action="https://search.unatlib.ru/Search/Results">
+<div class="ui search">
+<input name="lookfor" placeholder="Поиск по всем ресурсам библиотеки" type="text" class="prompt ds-text-field form-control"><i class="search icon"></i>
+<div class="results"></div>
+</div>
+</form>
+<div class="word-break hidden-print" id="ds-options">
+<div class="ds-option-set" id="ds-search-option">
+<form method="post" class="" id="ds-search-form" action="/discover">
+<fieldset>
+<div class="input-group">
+<input placeholder="Search" type="text" class="ds-text-field form-control" name="query"><span class="input-group-btn"><button title="Go" class="ds-button-field btn btn-primary"><span aria-hidden="true" class="glyphicon glyphicon-search"></span></button></span>
+</div>
+<div class="radio">
+<label><input checked value="" name="scope" type="radio" id="ds-search-form-scope-all">Search DSpace</label>
+</div>
+<div class="radio">
+<label><input name="scope" type="radio" id="ds-search-form-scope-container" value="123456789/15297">This Collection</label>
+</div>
+</fieldset>
+</form>
+<div style="margin: 25px 0;" id="yandex_rtb_R-A-456721-1"></div>
+<script type="text/javascript">
+    (function(w, d, n, s, t) {
+        w[n] = w[n] || [];
+        w[n].push(function() {
+            Ya.Context.AdvManager.render({
+                blockId: "R-A-456721-1",
+                renderTo: "yandex_rtb_R-A-456721-1",
+                async: true
+            });
+        });
+        t = d.getElementsByTagName("script")[0];
+        s = d.createElement("script");
+        s.type = "text/javascript";
+        s.src = "//an.yandex.ru/system/context.js";
+        s.async = true;
+        t.parentNode.insertBefore(s, t);
+    })(this, this.document, "yandexContextAsyncCallbacks");
+</script>
+</div>
+<h2 class="ds-option-set-head  h6">Browse</h2>
+<div id="aspect_viewArtifacts_Navigation_list_browse" class="list-group">
+<a class="list-group-item active"><span class="h5 list-group-item-heading  h5">All of DSpace</span></a><a href="/community-list" class="list-group-item ds-option">Communities &amp; Collections</a><a href="/browse?type=dateissued" class="list-group-item ds-option">By Issue Date</a><a href="/browse?type=author" class="list-group-item ds-option">Authors</a><a href="/browse?type=title" class="list-group-item ds-option">Titles</a><a href="/browse?type=subject" class="list-group-item ds-option">Subjects</a><a class="list-group-item active"><span class="h5 list-group-item-heading  h5">This Collection</span></a><a href="/handle/123456789/15297/browse?type=dateissued" class="list-group-item ds-option">By Issue Date</a><a href="/handle/123456789/15297/browse?type=author" class="list-group-item ds-option">Authors</a><a href="/handle/123456789/15297/browse?type=title" class="list-group-item ds-option">Titles</a><a href="/handle/123456789/15297/browse?type=subject" class="list-group-item ds-option">Subjects</a>
+</div>
+<h2 class="ds-option-set-head  h6">My Account</h2>
+<div id="aspect_viewArtifacts_Navigation_list_account" class="list-group">
+<a href="/login" class="list-group-item ds-option">Login</a>
+</div>
+<div id="aspect_viewArtifacts_Navigation_list_context" class="list-group"></div>
+<div id="aspect_viewArtifacts_Navigation_list_administrative" class="list-group"></div>
+<div id="aspect_discovery_Navigation_list_discovery" class="list-group"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="hidden-xs hidden-sm">
+<script>
+var dscoll = document.getElementsByClassName('ds-referenceSet-list')[0];
+var wq = dscoll.getElementsByTagName('a')[0].text;
+var we = unescape(encodeURIComponent(wq));
+var dstitle = document.getElementsByClassName('item-summary-view-metadata')[0];
+var dst1 = dstitle.getElementsByTagName('h1')[0].innerText;
+var dste = unescape(encodeURIComponent(dst1));
+document.cookie= "dsfc="+we+";path=/";
+document.cookie= "dsftitle="+dste+";path=/";
+</script>
+<footer>
+<div class="row">
+<hr>
+<div class="col-xs-7 col-sm-8">
+<div>
+<a target="_blank" href="http://www.dspace.org/" rel="nofollow">DSpace software</a> copyright&nbsp;&copy;&nbsp;2002-2016&nbsp; <a target="_blank" href="http://www.duraspace.org/" rel="nofollow">DuraSpace</a>
+</div>
+<div class="hidden-print">
+<a href="/contact">Contact Us</a> | <a href="/feedback">Send Feedback</a>
+</div>
+</div>
+<div class="col-xs-5 col-sm-4 hidden-print">
+<div class="pull-right">
+<span class="theme-by">Theme by&nbsp;</span>
+<br>
+<a href="http://atmire.com" target="_blank" title="Atmire NV" rel="nofollow"><img src="/themes/Mirage2/images/atmire-logo-small.svg" alt="Atmire NV"></a>
+</div>
+</div>
+</div>
+<a class="hidden" href="/htmlmap">&nbsp;</a>
+<p>&nbsp;</p>
+</footer>
+</div>
+</div>
+<script type="text/javascript">
+                         if(typeof window.publication === 'undefined'){
+                            window.publication={};
+                          };
+                        window.publication.contextPath= '';window.publication.themePath= '/themes/Mirage2/';</script><script>if(!window.DSpace){window.DSpace={};}window.DSpace.context_path='';window.DSpace.theme_path='/themes/Mirage2/';</script><script src="/themes/Mirage2/scripts/theme.js"> </script><script type="text/javascript">
+   (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+   m[i].l=1*new Date();k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+   (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+   ym(10318369, "init", {
+        clickmap:true,
+        trackLinks:true,
+        accurateTrackBounce:true
+   });
+</script>
+<noscript>
+<div>
+<img alt="" style="position:absolute; left:-9999px;" src="https://mc.yandex.ru/watch/10318369"></div>
+</noscript>
+</body></html>

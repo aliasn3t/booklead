@@ -169,11 +169,46 @@ def prlDl(url):
     return book_data['item_title'], ext
 
 
+def unatlib_download(url):
+    """
+    Скачивает PDF из национальной электронной библиотеки Удмуртской республики
+    Пример урла книги (HTML) - https://elibrary.unatlib.ru/handle/123456789/18116
+    Пример урла книги (PDF) - https://elibrary.unatlib.ru/bitstream/handle/123456789/18116/uiiyl_book_075.pdf
+    Реферером должен быть https://elibrary.unatlib.ru/build/pdf.worker.js
+    """
+    def parse_html():
+        response = requests.get(url)
+        html_text = response.text
+        # with open('test/data/elibrary-unatlib-ru.html', 'r') as fd:
+        #     html_text = fd.read()
+        soup = BeautifulSoup(html_text, 'html.parser')
+        title = soup.select_one('title').text
+        dsview = soup.select_one('#dsview')
+        assert dsview
+        href = dsview.get('href')  # e.g. /bitstream/handle/123456789/18116/uiiyl_book_075.pdf.jpg?sequence=1&amp;isAllowed=y
+        assert href
+        return title, f'https://elibrary.unatlib.ru{href}'
+
+    title, pdf_url = parse_html()
+    headers = {
+        'User-Agent': random.choice(user_agents),
+        'Referer': 'https://elibrary.unatlib.ru/build/pdf.worker.js',
+    }
+    response = requests.get(pdf_url, stream=True, headers=headers)
+    if not response.ok:
+        raise Exception(f'Ошибка: не удалось скачать файл {pdf_url} - {response.status_code} {response.reason}')
+    pdf_file = os.path.join(DOWNLOADS_DIR, f'{title}.pdf')
+    with open(pdf_file, 'wb') as fd:
+        shutil.copyfileobj(response.raw, fd)
+    return None  # all done, no further action needed
+
+
 domains = {
     'elib.shpl.ru': eshplDl,
     'docs.historyrussia.org': eshplDl,
     'prlib.ru': prlDl,
     'www.prlib.ru': prlDl,
+    'elibrary.unatlib.ru': unatlib_download,
 }
 
 
