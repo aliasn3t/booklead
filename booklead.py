@@ -70,7 +70,8 @@ def saveImage(url, img_id, folder, ext):
     makeFolder(folder)
 
     headers = {
-        'User-Agent': random.choice(user_agents)
+        'User-Agent': random.choice(user_agents),
+        'Referer': url,
     }
 
     response = requests.get(url, stream=True, headers=headers)
