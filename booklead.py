@@ -198,6 +198,7 @@ def unatlib_download(url):
     if not response.ok:
         raise Exception(f'Ошибка: не удалось скачать файл {pdf_url} - {response.status_code} {response.reason}')
     pdf_file = os.path.join(DOWNLOADS_DIR, f'{title}.pdf')
+    mkdirs_for_regular_file(pdf_file)
     with open(pdf_file, 'wb') as fd:
         shutil.copyfileobj(response.raw, fd)
     return None  # all done, no further action needed
