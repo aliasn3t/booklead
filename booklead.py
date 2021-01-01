@@ -157,8 +157,11 @@ def prlDl(url):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='booklead - Загрузчик книг из интернет-библиотек')
-    parser.add_argument('--pdf', dest='pdf', default='', metavar='"Y"', help='Создавать PDF-версии книг')
+    parser.add_argument('--pdf', dest='pdf', default='', metavar='y', help='Создавать PDF-версии книг')
     parser.add_argument('--list', dest='list', default='', metavar='"list.txt"', help='Файл со списком книг')
     parser.add_argument('--url', dest='url', default='', metavar='"http://..."', help='Ссылка на книгу')
     args = parser.parse_args()
-    main(args)
+    if args.url or args.list:
+        main(args)
+    else:
+        parser.print_help()
