@@ -11,19 +11,19 @@ import shutil
 from pathlib import Path
 import os
 import img2pdf
-import uuid 
+import uuid
 
 domains = {
     'elib.shpl.ru': 'eshplDl',
     'docs.historyrussia.org': 'eshplDl',
     'prlib.ru': 'prlDl',
     'www.prlib.ru': 'prlDl'
-    }
+}
 
 eshplDl_params = {
     'quality': 8,
     'ext': 'jpg'
-    }
+}
 
 prlDl_params = {
     'ext': 'jpg'
@@ -38,14 +38,16 @@ user_agents = [
     'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36',
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
     'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0'
-    ]
+]
+
 
 def initLoader(url):
     host = urllib.parse.urlsplit(url)
     try:
-        return eval(domains[host.hostname]+'(url)')
+        return eval(domains[host.hostname] + '(url)')
     except Exception:
         return False
+
 
 def makePdf(folder, ext):
     pdf_path = '{}.pdf'.format(folder)
@@ -59,15 +61,17 @@ def makePdf(folder, ext):
         pdf = img2pdf.convert(img_list)
         pdf_file.write(pdf)
 
+
 def makeFolder(folder):
     Path(folder).mkdir(exist_ok=True)
+
 
 def saveImage(url, img_id, folder, ext):
     makeFolder(folder)
 
     headers = {
         'User-Agent': random.choice(user_agents)
-        }
+    }
 
     response = requests.get(url, stream=True, headers=headers)
     image_path = '{}/{}.{}'.format(folder, str(img_id), ext)
@@ -76,9 +80,10 @@ def saveImage(url, img_id, folder, ext):
         with open(image_path, 'wb') as page_file:
             shutil.copyfileobj(response.raw, page_file)
 
+
 def main(args):
     urls = []
-    
+
     try:
         if args.url:
             urls.append(args.url)
@@ -95,12 +100,13 @@ def main(args):
             load = initLoader(url)
             if not load:
                 sys.stdout.write('\nСсылка: {}\n - Ошибка загрузки!'.format(url))
-            elif args.pdf.lower() == 'y': 
+            elif args.pdf.lower() == 'y':
                 sys.stdout.write('\n ─ Создание PDF...')
                 imgs_folder, imgs_ext = load
                 makePdf(imgs_folder, imgs_ext)
     except KeyboardInterrupt:
         sys.stdout.write('\nЗагрузка прервана!')
+
 
 def eshplDl(url):
     ext = eshplDl_params['ext']
@@ -118,7 +124,7 @@ def eshplDl(url):
     for script in soup.findAll('script'):
         if 'initDocview' in str(script):
             st = str(script)
-            book_json = json.loads(st[st.find('{"') : st.find(')')])
+            book_json = json.loads(st[st.find('{"'): st.find(')')])
     try:
         sys.stdout.write('\nCсылка: {}\n'.format(url))
         sys.stdout.write(' ─ Каталог для загрузки: {}\n'.format(book_id))
@@ -130,6 +136,7 @@ def eshplDl(url):
     except Exception as e:
         sys.stdout.write(e)
 
+
 def prlDl(url):
     ext = prlDl_params['ext']
 
@@ -138,7 +145,7 @@ def prlDl(url):
     for script in soup.findAll('script'):
         if 'jQuery.extend' in str(script):
             st = str(script)
-            book_json = json.loads(st[st.find('{"') : st.find(');')])
+            book_json = json.loads(st[st.find('{"'): st.find(');')])
             book = book_json['diva']['1']['options']
     response = requests.get(book['objectData'])
     try:
@@ -146,13 +153,13 @@ def prlDl(url):
         sys.stdout.write('\nCсылка: {}\n'.format(url))
         sys.stdout.write(' ─ Каталог для загрузки: {}\n'.format(book_data['item_title']))
         for idx, page in enumerate(book_data['pgs']):
-            page_url = 'https://content.prlib.ru/fcgi-bin/iipsrv.fcgi?FIF={}/{}&WID={}&CVT=jpeg'.format(book['imageDir'], page['f'], page['d'][len(page['d'])-1]['w'])
+            page_url = 'https://content.prlib.ru/fcgi-bin/iipsrv.fcgi?FIF={}/{}&WID={}&CVT=jpeg'.format(
+                book['imageDir'], page['f'], page['d'][len(page['d']) - 1]['w'])
             saveImage(page_url, idx + 1, book_data['item_title'], ext)
             sys.stdout.write('\r ─ Прогресс: {} из {} стр.'.format(idx + 1, len(book_data['pgs'])))
         return (book_data['item_title'], ext)
     except Exception as e:
         sys.stdout.write(e)
-        
 
 
 if __name__ == '__main__':
