@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
-import hashlib
-import sys
-import requests
-import random
 import argparse
-import urllib.parse
-from bs4 import BeautifulSoup
+import errno
+import hashlib
 import json
-import shutil
-from pathlib import Path
 import os
+import random
+import shutil
+import sys
+import urllib.parse
+
 import img2pdf
-import uuid
+import requests
+from bs4 import BeautifulSoup
+
+DOWNLOADS_DIR = 'downloads'
 
 domains = {
     'elib.shpl.ru': 'eshplDl',
@@ -51,7 +53,8 @@ def initLoader(url):
     host = urllib.parse.urlsplit(url)
     try:
         return eval(domains[host.hostname] + '(url)')
-    except Exception:
+    except Exception as e:
+        sys.stdout.write(str(e))
         return False
 
 
@@ -68,20 +71,27 @@ def makePdf(folder, ext):
         pdf_file.write(pdf)
 
 
-def makeFolder(folder):
-    Path(folder).mkdir(exist_ok=True)
+def mkdirs_for_regular_file(filename: str):
+    """Создаёт все необходимые директории чтобы можно было записать указанный файл"""
+    dirname = os.path.dirname(filename)
+    if not os.path.exists(dirname):
+        try:
+            os.makedirs(dirname)
+        except OSError as e:  # Guard against race condition
+            if e.errno != errno.EEXIST:
+                raise
 
 
 def saveImage(url, img_id, folder, ext):
-    makeFolder(folder)
-
     headers = {
         'User-Agent': random.choice(user_agents),
         'Referer': url,
     }
 
     response = requests.get(url, stream=True, headers=headers)
-    image_path = '{}/{}.{}'.format(folder, str(img_id), ext)
+    image_short = '%d.%s' % (img_id, ext)
+    image_path = os.path.join(DOWNLOADS_DIR, folder, image_short)
+    mkdirs_for_regular_file(image_path)
 
     if response.ok:
         with open(image_path, 'wb') as page_file:
@@ -109,8 +119,9 @@ def main(args):
                 sys.stdout.write('\nСсылка: {}\n - Ошибка загрузки!'.format(url))
             elif args.pdf.lower() == 'y':
                 sys.stdout.write('\n ─ Создание PDF...')
-                imgs_folder, imgs_ext = load
-                makePdf(imgs_folder, imgs_ext)
+                img_folder_short, imgs_ext = load
+                img_folder_full = os.path.join(DOWNLOADS_DIR, img_folder_short)
+                makePdf(img_folder_full, imgs_ext)
     except KeyboardInterrupt:
         sys.stdout.write('\nЗагрузка прервана!')
 
@@ -141,7 +152,7 @@ def eshplDl(url):
             sys.stdout.write('\r ─ Прогресс: {} из {} стр.'.format(idx + 1, len(book_json['pages'])))
         return (book_id, ext)
     except Exception as e:
-        sys.stdout.write(e)
+        sys.stdout.write(str(e))
 
 
 def prlDl(url):
@@ -166,7 +177,7 @@ def prlDl(url):
             sys.stdout.write('\r ─ Прогресс: {} из {} стр.'.format(idx + 1, len(book_data['pgs'])))
         return (book_data['item_title'], ext)
     except Exception as e:
-        sys.stdout.write(e)
+        sys.stdout.write(str(e))
 
 
 if __name__ == '__main__':
