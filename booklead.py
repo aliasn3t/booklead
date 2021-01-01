@@ -83,19 +83,24 @@ def mkdirs_for_regular_file(filename: str):
 
 
 def saveImage(url, img_id, folder, ext):
+    image_short = '%05d.%s' % (img_id, ext)
+    image_path = os.path.join(DOWNLOADS_DIR, folder, image_short)
+
+    if os.path.exists(image_path) and os.stat(image_path).st_size > 0:
+        return False
+
+    mkdirs_for_regular_file(image_path)
+
     headers = {
         'User-Agent': random.choice(user_agents),
         'Referer': url,
     }
 
     response = requests.get(url, stream=True, headers=headers)
-    image_short = '%05d.%s' % (img_id, ext)
-    image_path = os.path.join(DOWNLOADS_DIR, folder, image_short)
-    mkdirs_for_regular_file(image_path)
-
     if response.ok:
         with open(image_path, 'wb') as page_file:
             shutil.copyfileobj(response.raw, page_file)
+    return True
 
 
 def main(args):
