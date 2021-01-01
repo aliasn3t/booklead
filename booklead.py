@@ -59,6 +59,12 @@ def md5_hex(s: str):
     return md5.hexdigest()
 
 
+def random_pause(target_pause: float):
+    return random.uniform(
+        target_pause - target_pause * 0.5,
+        target_pause + target_pause * 0.5
+    )
+
 def makePdf(folder, ext):
     pdf_path = '{}.pdf'.format(folder)
     with open(pdf_path, "wb") as pdf_file:
@@ -94,7 +100,7 @@ def saveImage(url, img_id, folder, ext):
         return False
 
     if downloaded_last_time and timeout_btw_requests:
-        time.sleep(timeout_btw_requests)
+        time.sleep(random_pause(timeout_btw_requests))
 
     downloaded_last_time = True  # перед попыткой скачивания чтобы не нафлудить в случае массовых ошибок
     headers = {
