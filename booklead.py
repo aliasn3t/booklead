@@ -113,14 +113,17 @@ def eshplDl(url):
 def prlDl(url):
     ext = prlDl_params['ext']
 
-    response = requests.get(url)
+    headers = {
+        'User-Agent': random.choice(user_agents)
+    }
+    response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
     for script in soup.findAll('script'):
         if 'jQuery.extend' in str(script):
             st = str(script)
             book_json = json.loads(st[st.find('{"'): st.find(');')])
             book = book_json['diva']['1']['options']
-    response = requests.get(book['objectData'])
+    response = requests.get(book['objectData'], headers=headers)
     book_data = json.loads(response.text)
     ptext(f'Cсылка: {url}')
     ptext(' ─ Каталог для загрузки: {book_data["item_title"]}')
@@ -141,7 +144,12 @@ def unatlib_download(url):
     Реферером должен быть https://elibrary.unatlib.ru/build/pdf.worker.js
     """
     ptext(f'Cсылка: {url}')
-    response = requests.get(url)  # todo check for error
+    headers = {
+        'User-Agent': random.choice(user_agents),
+    }
+    response = requests.get(url, headers=headers)
+    if not response.ok:
+        raise Exception(f'Не удалось скачать {url}: {response.status_code} {response.reason}')
     html_text = response.text
     # with open('test/data/elibrary-unatlib-ru.html', 'r') as fd:
     #     html_text = fd.read()
