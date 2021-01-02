@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 import argparse
-import codecs
-import errno
-import hashlib
 import json
 import os
 import random
 import shutil
-import sys
 import time
 import urllib.parse
 
 import img2pdf
 import requests
 from bs4 import BeautifulSoup
+
+from util import select_one_text_required, select_one_attr_required, download_to_file, random_pause, \
+    mkdirs_for_regular_file, md5_hex, to_float, cut_bom, perror, progress, ptext
 
 DOWNLOADS_DIR = 'books'
 
@@ -41,30 +40,6 @@ user_agents = [
 ]
 
 
-def cut_bom(s: str):
-    bom = codecs.BOM_UTF8.decode("utf-8")
-    return s[len(bom):] if s.startswith(bom) else s
-
-
-def to_float(s: str, def_val=0.0):
-    try:
-        return float(s)
-    except ValueError:
-        return def_val
-
-
-def md5_hex(s: str):
-    md5 = hashlib.md5()
-    md5.update(s.encode('utf-8'))
-    return md5.hexdigest()
-
-
-def random_pause(target_pause: float):
-    return random.uniform(
-        target_pause - target_pause * 0.5,
-        target_pause + target_pause * 0.5
-    )
-
 def makePdf(folder, ext):
     pdf_path = '{}.pdf'.format(folder)
     with open(pdf_path, "wb") as pdf_file:
@@ -76,17 +51,6 @@ def makePdf(folder, ext):
         img_list.sort()
         pdf = img2pdf.convert(img_list)
         pdf_file.write(pdf)
-
-
-def mkdirs_for_regular_file(filename: str):
-    """Создаёт все необходимые директории чтобы можно было записать указанный файл"""
-    dirname = os.path.dirname(filename)
-    if not os.path.exists(dirname):
-        try:
-            os.makedirs(dirname)
-        except OSError as e:  # Guard against race condition
-            if e.errno != errno.EEXIST:
-                raise
 
 
 def saveImage(url, img_id, folder, ext):
@@ -111,13 +75,12 @@ def saveImage(url, img_id, folder, ext):
     if response.ok:
         content_type: str = response.headers.get('content-type')
         if content_type and not content_type.lower().startswith('image/'):
-            sys.stdout.write(
-                f'\rПредупреждение: кажется, то что скачалось с адреса {url} не является изображением: {content_type}\n')
+            perror(f'кажется, то что скачалось с адреса {url} не является изображением: {content_type}')
         mkdirs_for_regular_file(image_path)
         with open(image_path, 'wb') as page_file:
             shutil.copyfileobj(response.raw, page_file)
     else:
-        sys.stdout.write(f'\rОшибка: не удалось скачать файл {url} - ошибка {response.status_code} {response.reason}\n')
+        perror(f'не удалось скачать файл {url} - ошибка {response.status_code} {response.reason}')
     return True
 
 
@@ -138,12 +101,12 @@ def eshplDl(url):
         if 'initDocview' in str(script):
             st = str(script)
             book_json = json.loads(st[st.find('{"'): st.find(')')])
-    sys.stdout.write('\nCсылка: {}\n'.format(url))
-    sys.stdout.write(' ─ Каталог для загрузки: {}\n'.format(book_id))
+    ptext(f'Cсылка: {url}')
+    ptext(f' ─ Каталог для загрузки: {book_id}')
     for idx, page in enumerate(book_json['pages']):
         page_url = 'http://{}/pages/{}/zooms/{}'.format(domain, page['id'], quality)
         saveImage(page_url, idx + 1, book_id, ext)
-        sys.stdout.write('\r ─ Прогресс: {} из {} стр.'.format(idx + 1, len(book_json['pages'])))
+        progress(' ─ Прогресс: {} из {} стр.'.format(idx + 1, len(book_json['pages'])))
     return book_id, ext
 
 
@@ -159,48 +122,39 @@ def prlDl(url):
             book = book_json['diva']['1']['options']
     response = requests.get(book['objectData'])
     book_data = json.loads(response.text)
-    sys.stdout.write('\nCсылка: {}\n'.format(url))
-    sys.stdout.write(' ─ Каталог для загрузки: {}\n'.format(book_data['item_title']))
+    ptext(f'Cсылка: {url}')
+    ptext(' ─ Каталог для загрузки: {book_data["item_title"]}')
     for idx, page in enumerate(book_data['pgs']):
         page_url = 'https://content.prlib.ru/fcgi-bin/iipsrv.fcgi?FIF={}/{}&WID={}&CVT=jpeg'.format(
             book['imageDir'], page['f'], page['d'][len(page['d']) - 1]['w'])
         saveImage(page_url, idx + 1, book_data['item_title'], ext)
-        sys.stdout.write('\r ─ Прогресс: {} из {} стр.'.format(idx + 1, len(book_data['pgs'])))
+        progress(' ─ Прогресс: {} из {} стр.'.format(idx + 1, len(book_data['pgs'])))
     return book_data['item_title'], ext
 
 
 def unatlib_download(url):
     """
-    Скачивает PDF из национальной электронной библиотеки Удмуртской республики
+    Национальная электронная библиотека Удмуртской республики
+    Формат - PDF
     Пример урла книги (HTML) - https://elibrary.unatlib.ru/handle/123456789/18116
     Пример урла книги (PDF) - https://elibrary.unatlib.ru/bitstream/handle/123456789/18116/uiiyl_book_075.pdf
     Реферером должен быть https://elibrary.unatlib.ru/build/pdf.worker.js
     """
-    def parse_html():
-        response = requests.get(url)
-        html_text = response.text
-        # with open('test/data/elibrary-unatlib-ru.html', 'r') as fd:
-        #     html_text = fd.read()
-        soup = BeautifulSoup(html_text, 'html.parser')
-        title = soup.select_one('title').text
-        dsview = soup.select_one('#dsview')
-        assert dsview
-        href = dsview.get('href')  # e.g. /bitstream/handle/123456789/18116/uiiyl_book_075.pdf.jpg?sequence=1&amp;isAllowed=y
-        assert href
-        return title, f'https://elibrary.unatlib.ru{href}'
-
-    title, pdf_url = parse_html()
+    ptext(f'Cсылка: {url}')
+    response = requests.get(url)  # todo check for error
+    html_text = response.text
+    # with open('test/data/elibrary-unatlib-ru.html', 'r') as fd:
+    #     html_text = fd.read()
+    soup = BeautifulSoup(html_text, 'html.parser')
+    title = select_one_text_required(soup, 'title')
+    pdf_href = select_one_attr_required(soup, '#dsview', 'href')
+    pdf_url = f'https://elibrary.unatlib.ru{pdf_href}'
     headers = {
         'User-Agent': random.choice(user_agents),
         'Referer': 'https://elibrary.unatlib.ru/build/pdf.worker.js',
     }
-    response = requests.get(pdf_url, stream=True, headers=headers)
-    if not response.ok:
-        raise Exception(f'Ошибка: не удалось скачать файл {pdf_url} - {response.status_code} {response.reason}')
     pdf_file = os.path.join(DOWNLOADS_DIR, f'{title}.pdf')
-    mkdirs_for_regular_file(pdf_file)
-    with open(pdf_file, 'wb') as fd:
-        shutil.copyfileobj(response.raw, fd)
+    download_to_file(pdf_url, pdf_file, headers)
     return None  # all done, no further action needed
 
 
@@ -217,15 +171,15 @@ def download_book(url):
     try:
         host = urllib.parse.urlsplit(url)
         if not host.hostname:
-            sys.stdout.write(f'\nОшибка: Некорректный урл: {url}')
+            perror(f'Ошибка: Некорректный урл: {url}')
             return None
         site_downloader = domains.get(host.hostname)
         if not site_downloader:
-            sys.stdout.write(f'\nОшибка: Домен {host.hostname} не поддерживается')
+            perror(f'Домен {host.hostname} не поддерживается')
             return None
         return site_downloader(url)
     except Exception as e:
-        sys.stdout.write(f'\nОшибка: {e}')
+        perror(f'Ошибка: {e}')
         return None
 
 
@@ -241,21 +195,19 @@ def main(args):
             with open(args.list) as fp:
                 urls.extend([line.strip() for line in fp])
         urls = list(filter(bool, map(lambda x: cut_bom(x).strip(), urls)))
-
-        sys.stdout.write(f'Ссылок для загрузки - {len(urls)}')
-
+        ptext(f'Ссылок для загрузки - {len(urls)}')
         for url in urls:
             load = download_book(url)
             if load:
                 if args.pdf.lower() in ['y', 'yes']:
-                    sys.stdout.write('\n ─ Создание PDF...')
+                    ptext(' ─ Создание PDF...')
                     img_folder_short, img_ext = load
                     img_folder_full = os.path.join(DOWNLOADS_DIR, img_folder_short)
                     makePdf(img_folder_full, img_ext)
     except KeyboardInterrupt:
-        sys.stdout.write('\nЗагрузка прервана!')
+        perror('Загрузка прервана')
     except Exception as e:
-        sys.stdout.write(f'\nОшибка: {e}')
+        perror(f'Ошибка: {e}')
 
 
 if __name__ == '__main__':
