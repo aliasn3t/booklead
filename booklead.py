@@ -11,8 +11,8 @@ import img2pdf
 import requests
 from bs4 import BeautifulSoup
 
-from util import select_one_text_required, select_one_attr_required, download_to_file, random_pause, \
-    mkdirs_for_regular_file, md5_hex, to_float, cut_bom, perror, progress, ptext
+from util import select_one_text_required, select_one_attr_required, random_pause, \
+    mkdirs_for_regular_file, md5_hex, to_float, cut_bom, perror, progress, ptext, safe_file_name, Browser, user_agents
 
 DOWNLOADS_DIR = 'books'
 
@@ -28,29 +28,19 @@ prlDl_params = {
     'ext': 'jpg'
 }
 
-user_agents = [
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.78 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.157 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 5.1; rv:7.0.1) Gecko/20100101 Firefox/7.0.1',
-    'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
-    'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0'
-]
+bro = Browser()
 
 
-def makePdf(folder, ext):
-    pdf_path = '{}.pdf'.format(folder)
-    with open(pdf_path, "wb") as pdf_file:
-        img_list = []
-        for r, _, ff in os.walk(folder):
-            for fname in ff:
-                if fname.endswith(f'.{ext}'):
-                    img_list.append(os.path.join(r, fname))
-        img_list.sort()
-        pdf = img2pdf.convert(img_list)
-        pdf_file.write(pdf)
+def makePdf(pdf_path, img_folder, img_ext):
+    img_list = []
+    for r, _, ff in os.walk(img_folder):
+        for fname in ff:
+            if fname.endswith(f'.{img_ext}'):
+                img_list.append(os.path.join(r, fname))
+    img_list.sort()
+    pdf = img2pdf.convert(img_list)
+    with open(pdf_path, "wb") as fd:
+        fd.write(pdf)
 
 
 def saveImage(url, img_id, folder, ext):
@@ -101,7 +91,6 @@ def eshplDl(url):
         if 'initDocview' in str(script):
             st = str(script)
             book_json = json.loads(st[st.find('{"'): st.find(')')])
-    ptext(f'Cсылка: {url}')
     ptext(f' ─ Каталог для загрузки: {book_id}')
     for idx, page in enumerate(book_json['pages']):
         page_url = 'http://{}/pages/{}/zooms/{}'.format(domain, page['id'], quality)
@@ -125,14 +114,14 @@ def prlDl(url):
             book = book_json['diva']['1']['options']
     response = requests.get(book['objectData'], headers=headers)
     book_data = json.loads(response.text)
-    ptext(f'Cсылка: {url}')
     ptext(' ─ Каталог для загрузки: {book_data["item_title"]}')
+    book_title = safe_file_name(book_data['item_title'], url)
     for idx, page in enumerate(book_data['pgs']):
         page_url = 'https://content.prlib.ru/fcgi-bin/iipsrv.fcgi?FIF={}/{}&WID={}&CVT=jpeg'.format(
             book['imageDir'], page['f'], page['d'][len(page['d']) - 1]['w'])
-        saveImage(page_url, idx + 1, book_data['item_title'], ext)
+        saveImage(page_url, idx + 1, book_title, ext)
         progress(' ─ Прогресс: {} из {} стр.'.format(idx + 1, len(book_data['pgs'])))
-    return book_data['item_title'], ext
+    return book_title, ext
 
 
 def unatlib_download(url):
@@ -143,26 +132,15 @@ def unatlib_download(url):
     Пример урла книги (PDF) - https://elibrary.unatlib.ru/bitstream/handle/123456789/18116/uiiyl_book_075.pdf
     Реферером должен быть https://elibrary.unatlib.ru/build/pdf.worker.js
     """
-    ptext(f'Cсылка: {url}')
-    headers = {
-        'User-Agent': random.choice(user_agents),
-    }
-    response = requests.get(url, headers=headers)
-    if not response.ok:
-        raise Exception(f'Не удалось скачать {url}: {response.status_code} {response.reason}')
-    html_text = response.text
-    # with open('test/data/elibrary-unatlib-ru.html', 'r') as fd:
-    #     html_text = fd.read()
+    html_text = bro.get_text(url)
     soup = BeautifulSoup(html_text, 'html.parser')
     title = select_one_text_required(soup, 'title')
+    title = safe_file_name(title, url)
     pdf_href = select_one_attr_required(soup, '#dsview', 'href')
     pdf_url = f'https://elibrary.unatlib.ru{pdf_href}'
-    headers = {
-        'User-Agent': random.choice(user_agents),
-        'Referer': 'https://elibrary.unatlib.ru/build/pdf.worker.js',
-    }
+    headers = {'Referer': 'https://elibrary.unatlib.ru/build/pdf.worker.js'}
     pdf_file = os.path.join(DOWNLOADS_DIR, f'{title}.pdf')
-    download_to_file(pdf_url, pdf_file, headers)
+    bro.download(pdf_url, pdf_file, headers)
     return None  # all done, no further action needed
 
 
@@ -179,43 +157,49 @@ def download_book(url):
     try:
         host = urllib.parse.urlsplit(url)
         if not host.hostname:
-            perror(f'Ошибка: Некорректный урл: {url}')
+            perror(f'Некорректный урл: {url}')
             return None
         site_downloader = domains.get(host.hostname)
         if not site_downloader:
             perror(f'Домен {host.hostname} не поддерживается')
             return None
+        ptext(f'Cсылка: {url}')
         return site_downloader(url)
     except Exception as e:
-        perror(f'Ошибка: {e}')
+        perror(e)
         return None
 
 
-def main(args):
+def collect_urls():
+    urls = []
+    if args.url:
+        urls.append(args.url)
+    if args.list:
+        with open(args.list) as fp:
+            urls.extend([line.strip() for line in fp])
+    return list(filter(bool, map(lambda x: cut_bom(x).strip(), urls)))
+
+
+def main():
     try:
-        urls = []
+        urls = collect_urls()
+        ptext(f'Ссылок для загрузки: {len(urls)}')
         if args.timeout:
             global timeout_btw_requests
             timeout_btw_requests = to_float(args.timeout)
-        if args.url:
-            urls.append(args.url)
-        if args.list:
-            with open(args.list) as fp:
-                urls.extend([line.strip() for line in fp])
-        urls = list(filter(bool, map(lambda x: cut_bom(x).strip(), urls)))
-        ptext(f'Ссылок для загрузки - {len(urls)}')
         for url in urls:
             load = download_book(url)
-            if load:
-                if args.pdf.lower() in ['y', 'yes']:
-                    ptext(' ─ Создание PDF...')
-                    img_folder_short, img_ext = load
-                    img_folder_full = os.path.join(DOWNLOADS_DIR, img_folder_short)
-                    makePdf(img_folder_full, img_ext)
+            if load and args.pdf.lower() in ['y', 'yes']:
+                progress(' ─ Создание PDF...')
+                title, img_ext = load
+                img_folder_full = os.path.join(DOWNLOADS_DIR, title)
+                pdf_path = os.path.join(DOWNLOADS_DIR, f'{title}.pdf')
+                makePdf(pdf_path, img_folder_full, img_ext)
+                ptext(f' - Файл сохранён: {pdf_path}')
     except KeyboardInterrupt:
         perror('Загрузка прервана')
     except Exception as e:
-        perror(f'Ошибка: {e}')
+        perror(e)
 
 
 if __name__ == '__main__':
@@ -227,6 +211,6 @@ if __name__ == '__main__':
                         help='Пауза между HTTP-запросами в секундах')
     args = parser.parse_args()
     if args.url or args.list:
-        main(args)
+        main()
     else:
         parser.print_help()
