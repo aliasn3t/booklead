@@ -65,11 +65,13 @@ log = get_logger(__name__)
 
 def perror(msg):
     """печать ошибки на экран, не может быть стёрто"""
+    log.error(f'Ошибка отображена пользователю: {msg}')
     sys.stdout.write(f'\rОшибка: {msg}\n')
 
 
 def ptext(msg):
     """печать обычного сообщения на экран, не может быть стёрто"""
+    log.debug(f'Сообщение отображено пользователю: {msg}')
     sys.stdout.write(f'\r{msg}\n')
 
 
@@ -194,7 +196,6 @@ class Browser:
         with open(fpath, 'wb') as fd:
             shutil.copyfileobj(response.raw, fd)
         length = os.stat(fpath).st_size
-        log.debug(f'Saved to {fpath}')
         ptext(f'Сохранено в файл {fpath} ({length} байт)')
 
     def _prepare_headers(self, additional_headers: Dict):

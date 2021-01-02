@@ -45,7 +45,6 @@ def saveImage(url, img_id, folder, ext, referer):
     headers = {'Referer': referer}
     expected_ct = re.compile('image/')
     bro.download(url, image_path, headers, content_type=expected_ct, skip_if_file_exists=True)
-    return True
 
 
 def eshplDl(url):
@@ -57,8 +56,8 @@ def eshplDl(url):
     html_text = bro.get_text(url)
     soup = BeautifulSoup(html_text, 'html.parser')
     for script in soup.findAll('script'):
-        if 'initDocview' in str(script):
-            st = str(script)
+        st = str(script)
+        if 'initDocview' in st:
             book_json = json.loads(st[st.find('{"'): st.find(')')])
     ptext(f' ─ Каталог для загрузки: {book_id}')
     pages = book_json['pages']
@@ -74,8 +73,8 @@ def prlDl(url):
     html_text = bro.get_text(url)
     soup = BeautifulSoup(html_text, 'html.parser')
     for script in soup.findAll('script'):
-        if 'jQuery.extend' in str(script):
-            st = str(script)
+        st = str(script)
+        if 'jQuery.extend' in st:
             book_json = json.loads(st[st.find('{"'): st.find(');')])
             book = book_json['diva']['1']['options']
     json_text = bro.get_text(book['objectData'])
@@ -134,6 +133,7 @@ def download_book(url):
         ptext(f'Cсылка: {url}')
         return site_downloader(url)
     except Exception as e:
+        log.exception('download_book failed')
         perror(e)
         return None
 
@@ -169,6 +169,7 @@ def main():
     except KeyboardInterrupt:
         perror('Загрузка прервана')
     except Exception as e:
+        log.exception('main failed')
         perror(e)
 
 
