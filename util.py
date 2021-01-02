@@ -35,7 +35,7 @@ logging_set_up = False
 def _setup_logging():
     time_format = '%Y-%m-%d %H:%M:%S'
     log_formatter = logging.Formatter("%(asctime)s %(levelname)-5.5s %(message)s", time_format)
-    log_level = os.getenv('LOGLEVEL', 'DEBUG')
+    log_level = os.getenv('LOGLEVEL', 'INFO')
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
     if root_logger.hasHandlers():
@@ -69,7 +69,7 @@ def perror(msg):
 
 def ptext(msg):
     """печать обычного сообщения на экран, не может быть стёрто"""
-    log.debug(f'Сообщение отображено пользователю: {msg}')
+    log.info(f'Сообщение отображено пользователю: {msg}')
     sys.stdout.write(f'\r{msg}\n')
 
 
@@ -113,6 +113,13 @@ def random_pause(target_pause: float):
         target_pause + target_pause * 0.5)
 
 
+def select_one_required(root: Tag, selector: str) -> Tag:
+    tag = root.select_one(selector)
+    if not tag:
+        raise Exception(f'Не найден элемент по пути {selector}')
+    return tag
+
+
 def select_one_text_required(root: Tag, selector: str):
     tag = root.select_one(selector)
     if not tag:
@@ -121,6 +128,14 @@ def select_one_text_required(root: Tag, selector: str):
     if not text:
         raise Exception(f'Не найден text у элемента по пути {selector}')
     return text
+
+
+def select_one_text_optional(root: Tag, selector: str):
+    tag = root.select_one(selector)
+    if not tag:
+        raise Exception(f'Не найден элемент по пути {selector}')
+    text = tag.text if tag else ''
+    return text.strip()
 
 
 def select_one_attr_required(root: Tag, selector: str, attr_name: str):
@@ -134,7 +149,7 @@ def select_one_attr_required(root: Tag, selector: str, attr_name: str):
     return val
 
 
-def safe_file_name(title: str, url: str):
+def safe_file_name(title: str, url: str = None):
     # todo implement
     return title
 
@@ -147,12 +162,12 @@ def pausable(func):
     def wrapper(*args, **kwargs):
         global last_time_connected
         bro: Browser = args[0]
-        if not last_time_connected:
-            pause = 0
+        if last_time_connected and bro.pause:
+            pause = random_pause(bro.pause) - (datetime.datetime.now() - last_time_connected).total_seconds()
         else:
-            pause = bro.pause - (datetime.datetime.now() - last_time_connected).total_seconds()
+            pause = 0
         if pause > 0:
-            log.debug(f'Sleeping for {pause} s')
+            log.info(f'Sleeping for {pause} s')
             time.sleep(pause)
         last_time_connected = datetime.datetime.now()
         return func(*args, **kwargs)
@@ -167,10 +182,10 @@ class Browser:
     @pausable
     def get_text(self, url: str, headers: Dict = None, content_type: str = None):
         headers = self._prepare_headers(headers)
-        log.debug(f'Requesting GET {url}, headers: {headers}')
+        log.info(f'Requesting GET {url}, headers: {headers}')
         response = requests.get(url, headers=headers)
-        log.debug(f'Response: {response.status_code} {response.reason}')
-        log.debug(f'Headers: {response.headers}')
+        log.info(f'Response: {response.status_code} {response.reason}')
+        log.info(f'Headers: {response.headers}')
         self._validate_response(response, url, content_type)
         return response.text
 
@@ -181,22 +196,22 @@ class Browser:
                  content_type: Union[str, Pattern] = None,
                  skip_if_file_exists=False):
         global last_time_connected
-        progress(f'Скачиваю {url}')
+        progress(f' - Скачиваю {url}')
         if skip_if_file_exists and os.path.exists(fpath) and os.stat(fpath).st_size > 0:
-            log.debug(f'Пропускаем уже скачанный файл: {fpath}')
+            log.info(f'Пропускаем уже скачанный файл: {fpath}')
             last_time_connected = None
             return
         headers = self._prepare_headers(headers)
-        log.debug(f'Requesting GET {url}, headers: {headers}')
+        log.info(f'Requesting GET {url}, headers: {headers}')
         response = requests.get(url, stream=True, headers=headers)
-        log.debug(f'Response: {response.status_code} {response.reason}')
-        log.debug(f'Headers: {response.headers}')
+        log.info(f'Response: {response.status_code} {response.reason}')
+        log.info(f'Headers: {response.headers}')
         self._validate_response(response, url, content_type)
         mkdirs_for_regular_file(fpath)
         with open(fpath, 'wb') as fd:
             shutil.copyfileobj(response.raw, fd)
         length = os.stat(fpath).st_size
-        ptext(f'Сохранено в файл {fpath} ({length} байт)')
+        ptext(f' - Сохранено в файл {fpath} ({length} байт)')
 
     def _prepare_headers(self, additional_headers: Dict):
         headers = additional_headers if additional_headers else {}
@@ -215,9 +230,3 @@ class Browser:
                 else:
                     if actual_ct != expected_ct:
                         perror(f'Некорректный content-type {actual_ct} по адресу {url}')
-
-
-if __name__ == '__main__':
-    bro = Browser(pause=2)
-    text = bro.get_text('https://ya.ru/')
-    stop = 1

@@ -8,7 +8,8 @@ import urllib.parse
 import img2pdf
 from bs4 import BeautifulSoup
 
-from util import md5_hex, to_float, cut_bom, perror, progress, ptext, safe_file_name, Browser, get_logger
+from util import get_logger
+from util import md5_hex, to_float, cut_bom, perror, progress, ptext, safe_file_name, Browser, select_one_text_optional
 from util import select_one_text_required, select_one_attr_required
 
 log = get_logger(__name__)
@@ -69,9 +70,17 @@ def eshplDl(url):
 
 
 def prlDl(url):
+    """
+    Президентская библиотека имени Б.Н. Ельцина
+    Формат - серия изображений
+    Пример урла книги (HTML) - https://www.prlib.ru/item/420931
+    """
     ext = prlDl_params['ext']
     html_text = bro.get_text(url)
     soup = BeautifulSoup(html_text, 'html.parser')
+    book_title = safe_file_name(
+        select_one_text_optional(soup, 'h1') or md5_hex(url))
+    ptext(f' ─ Каталог для загрузки: {book_title}')
     for script in soup.findAll('script'):
         st = str(script)
         if 'jQuery.extend' in st:
@@ -79,8 +88,6 @@ def prlDl(url):
             book = book_json['diva']['1']['options']
     json_text = bro.get_text(book['objectData'])
     book_data = json.loads(json_text)
-    book_title = safe_file_name(book_data['item_title'], url)
-    ptext(f' ─ Каталог для загрузки: {book_title}')
     pages = book_data['pgs']
     for idx, page in enumerate(pages):
         img_url = 'https://content.prlib.ru/fcgi-bin/iipsrv.fcgi?FIF={}/{}&WID={}&CVT=jpeg'.format(
@@ -121,7 +128,7 @@ domains = {
 
 def download_book(url):
     try:
-        log.debug(f'Downloading book {url}')
+        log.info(f'Downloading book {url}')
         host = urllib.parse.urlsplit(url)
         if not host.hostname:
             perror(f'Некорректный урл: {url}')
@@ -145,13 +152,16 @@ def collect_urls():
     if args.list:
         with open(args.list) as fp:
             urls.extend([line.strip() for line in fp])
-    return list(filter(bool, map(lambda x: cut_bom(x).strip(), urls)))
+    return list(
+        filter(lambda x: not x.startswith('#'),
+               filter(bool,
+                      map(lambda x: cut_bom(x).strip(), urls))))
 
 
 def main():
     try:
         global bro
-        log.debug('Программа стартовала')
+        log.info('Программа стартовала')
         urls = collect_urls()
         ptext(f'Ссылок для загрузки: {len(urls)}')
         pause = 0
@@ -173,7 +183,7 @@ def main():
         log.exception('main failed')
         perror(e)
     finally:
-        log.debug('Программа завершена')
+        log.info('Программа завершена')
 
 
 if __name__ == '__main__':
