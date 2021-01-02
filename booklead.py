@@ -2,22 +2,18 @@
 import argparse
 import json
 import os
-import random
-import shutil
-import time
+import re
 import urllib.parse
 
 import img2pdf
-import requests
 from bs4 import BeautifulSoup
 
-from util import md5_hex, to_float, cut_bom, perror, progress, ptext, safe_file_name, Browser, user_agents, get_logger
-from util import select_one_text_required, select_one_attr_required, random_pause, mkdirs_for_regular_file
+from util import md5_hex, to_float, cut_bom, perror, progress, ptext, safe_file_name, Browser, get_logger
+from util import select_one_text_required, select_one_attr_required
+
+log = get_logger(__name__)
 
 BOOK_DIR = 'books'
-
-timeout_btw_requests = 0
-downloaded_last_time = False
 
 eshplDl_params = {
     'quality': 8,
@@ -28,9 +24,7 @@ prlDl_params = {
     'ext': 'jpg'
 }
 
-bro = Browser()
-
-log = get_logger(__name__)
+bro: Browser
 
 
 def makePdf(pdf_path, img_folder, img_ext):
@@ -45,34 +39,12 @@ def makePdf(pdf_path, img_folder, img_ext):
         fd.write(pdf)
 
 
-def saveImage(url, img_id, folder, ext):
-    global downloaded_last_time, timeout_btw_requests
-
+def saveImage(url, img_id, folder, ext, referer):
     image_short = '%05d.%s' % (img_id, ext)
     image_path = os.path.join(BOOK_DIR, folder, image_short)
-
-    if os.path.exists(image_path) and os.stat(image_path).st_size > 0:
-        downloaded_last_time = False
-        return False
-
-    if downloaded_last_time and timeout_btw_requests:
-        time.sleep(random_pause(timeout_btw_requests))
-
-    downloaded_last_time = True  # перед попыткой скачивания чтобы не нафлудить в случае массовых ошибок
-    headers = {
-        'User-Agent': random.choice(user_agents),
-        'Referer': url,
-    }
-    response = requests.get(url, stream=True, headers=headers)
-    if response.ok:
-        content_type: str = response.headers.get('content-type')
-        if content_type and not content_type.lower().startswith('image/'):
-            perror(f'кажется, то что скачалось с адреса {url} не является изображением: {content_type}')
-        mkdirs_for_regular_file(image_path)
-        with open(image_path, 'wb') as page_file:
-            shutil.copyfileobj(response.raw, page_file)
-    else:
-        perror(f'не удалось скачать файл {url} - ошибка {response.status_code} {response.reason}')
+    headers = {'Referer': referer}
+    expected_ct = re.compile('image/')
+    bro.download(url, image_path, headers, content_type=expected_ct, skip_if_file_exists=True)
     return True
 
 
@@ -91,8 +63,8 @@ def eshplDl(url):
     ptext(f' ─ Каталог для загрузки: {book_id}')
     pages = book_json['pages']
     for idx, page in enumerate(pages):
-        page_url = f'http://{domain}/pages/{page["id"]}/zooms/{quality}'
-        saveImage(page_url, idx + 1, book_id, ext)
+        img_url = f'http://{domain}/pages/{page["id"]}/zooms/{quality}'
+        saveImage(img_url, idx + 1, book_id, ext, url)
         progress(f' ─ Прогресс: {idx + 1} из {len(pages)} стр.')
     return book_id, ext
 
@@ -112,9 +84,9 @@ def prlDl(url):
     book_title = safe_file_name(book_data['item_title'], url)
     pages = book_data['pgs']
     for idx, page in enumerate(pages):
-        page_url = 'https://content.prlib.ru/fcgi-bin/iipsrv.fcgi?FIF={}/{}&WID={}&CVT=jpeg'.format(
+        img_url = 'https://content.prlib.ru/fcgi-bin/iipsrv.fcgi?FIF={}/{}&WID={}&CVT=jpeg'.format(
             book['imageDir'], page['f'], page['d'][len(page['d']) - 1]['w'])
-        saveImage(page_url, idx + 1, book_title, ext)
+        saveImage(img_url, idx + 1, book_title, ext, url)
         progress(f' ─ Прогресс: {idx + 1} из {len(pages)} стр.')
     return book_title, ext
 
@@ -135,7 +107,7 @@ def unatlib_download(url):
     pdf_url = f'https://elibrary.unatlib.ru{pdf_href}'
     headers = {'Referer': 'https://elibrary.unatlib.ru/build/pdf.worker.js'}
     pdf_file = os.path.join(BOOK_DIR, f'{title}.pdf')
-    bro.download(pdf_url, pdf_file, headers)
+    bro.download(pdf_url, pdf_file, headers, skip_if_file_exists=True)
     return None  # all done, no further action needed
 
 
@@ -178,11 +150,13 @@ def collect_urls():
 
 def main():
     try:
+        global bro
         urls = collect_urls()
         ptext(f'Ссылок для загрузки: {len(urls)}')
-        if args.timeout:
-            global timeout_btw_requests
-            timeout_btw_requests = to_float(args.timeout)
+        pause = 0
+        if args.pause:
+            pause = to_float(args.pause)
+        bro = Browser(pause=pause)
         for url in urls:
             load = download_book(url)
             if load and args.pdf.lower() in ['y', 'yes']:
@@ -203,7 +177,7 @@ if __name__ == '__main__':
     parser.add_argument('--pdf', dest='pdf', default='', metavar='y', help='Создавать PDF-версии книг')
     parser.add_argument('--list', dest='list', default='', metavar='"list.txt"', help='Файл со списком книг')
     parser.add_argument('--url', dest='url', default='', metavar='"http://..."', help='Ссылка на книгу')
-    parser.add_argument('--timeout', dest='timeout', default='0', metavar='1.0',
+    parser.add_argument('--pause', dest='pause', default='0', metavar='1.0',
                         help='Пауза между HTTP-запросами в секундах')
     args = parser.parse_args()
     if args.url or args.list:

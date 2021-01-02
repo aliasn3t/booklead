@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 import codecs
+import datetime
 import errno
+import functools
 import hashlib
 import logging
 import os
 import random
 import shutil
 import sys
+import time
 
 import requests
 from bs4 import Tag
 from requests import Response
-from typing import Dict
+from typing import Dict, Optional, Pattern, Union
 
 user_agents = [
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.78 Safari/537.36',
@@ -136,7 +139,32 @@ def safe_file_name(title: str, url: str):
     return title
 
 
+last_time_connected: Optional[datetime.datetime] = None
+
+
+def pausable(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        global last_time_connected
+        bro: Browser = args[0]
+        if not last_time_connected:
+            pause = 0
+        else:
+            pause = bro.pause - (datetime.datetime.now() - last_time_connected).total_seconds()
+        if pause > 0:
+            log.debug(f'Sleeping for {pause} s')
+            time.sleep(pause)
+        last_time_connected = datetime.datetime.now()
+        return func(*args, **kwargs)
+    return wrapper
+
+
 class Browser:
+
+    def __init__(self, pause: float):
+        self.pause = pause
+
+    @pausable
     def get_text(self, url: str, headers: Dict = None, content_type: str = None):
         headers = self._prepare_headers(headers)
         log.debug(f'Requesting GET {url}, headers: {headers}')
@@ -146,18 +174,27 @@ class Browser:
         self._validate_response(response, url, content_type)
         return response.text
 
-    def download(self, url, fpath, headers: Dict = None, content_type: str = None):
+    @pausable
+    def download(self, url: str,
+                 fpath: str,
+                 headers: Dict = None,
+                 content_type: Union[str, Pattern] = None,
+                 skip_if_file_exists=False):
         progress(f'Скачиваю {url}')
+        if skip_if_file_exists and os.path.exists(fpath) and os.stat(fpath).st_size > 0:
+            log.debug(f'Пропускаем уже скачанный файл: {fpath}')
+            return
         headers = self._prepare_headers(headers)
         log.debug(f'Requesting GET {url}, headers: {headers}')
         response = requests.get(url, stream=True, headers=headers)
         log.debug(f'Response: {response.status_code} {response.reason}')
         log.debug(f'Headers: {response.headers}')
-        self._validate_response(response, url, None)
+        self._validate_response(response, url, content_type)
         mkdirs_for_regular_file(fpath)
         with open(fpath, 'wb') as fd:
             shutil.copyfileobj(response.raw, fd)
         length = os.stat(fpath).st_size
+        log.debug(f'Saved to {fpath}')
         ptext(f'Сохранено в файл {fpath} ({length} байт)')
 
     def _prepare_headers(self, additional_headers: Dict):
@@ -165,11 +202,21 @@ class Browser:
         headers.update({'User-Agent': random.choice(user_agents)})
         return headers
 
-    def _validate_response(self, response: Response, url, expected_ct):
+    def _validate_response(self, response: Response, url, expected_ct: Union[str, Pattern]):
         if not response.ok:
             raise Exception(f'Не удалось скачать файл {url} - {response.status_code} {response.reason}')
         if expected_ct:
             actual_ct: str = response.headers.get('content-type')
             if actual_ct:
-                if actual_ct != expected_ct:
-                    perror(f'Некорректный content-type {actual_ct} по адресу {url}')
+                if isinstance(expected_ct, Pattern):
+                    if not expected_ct.match(actual_ct):
+                        perror(f'Некорректный content-type {actual_ct} по адресу {url}')
+                else:
+                    if actual_ct != expected_ct:
+                        perror(f'Некорректный content-type {actual_ct} по адресу {url}')
+
+
+if __name__ == '__main__':
+    bro = Browser(pause=2)
+    text = bro.get_text('https://ya.ru/')
+    stop = 1
