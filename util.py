@@ -2,6 +2,7 @@
 import codecs
 import errno
 import hashlib
+import logging
 import os
 import random
 import shutil
@@ -22,6 +23,41 @@ user_agents = [
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36',
     'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0'
 ]
+
+
+LOG_FILE = 'booklead.log'
+logging_set_up = False
+
+
+def _setup_logging():
+    time_format = '%Y-%m-%d %H:%M:%S'
+    log_formatter = logging.Formatter("%(asctime)s %(levelname)-5.5s %(message)s", time_format)
+    log_level = os.getenv('LOGLEVEL', 'DEBUG')
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+    if root_logger.hasHandlers():
+        # https://stackoverflow.com/questions/7173033/duplicate-log-output-when-using-python-logging-module
+        root_logger.handlers.clear()
+
+    file_handler = logging.FileHandler(LOG_FILE, encoding='utf-8')
+    file_handler.setFormatter(log_formatter)
+    root_logger.addHandler(file_handler)
+
+    if os.getenv('LOGTOCONSOLE', '0') == '1':
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(log_formatter)
+        root_logger.addHandler(console_handler)
+
+    logging.debug('using LOG_FILE: %s', LOG_FILE)
+
+
+def get_logger(name=None):
+    if not logging_set_up:
+        _setup_logging()
+    return logging.getLogger(name)
+
+
+log = get_logger(__name__)
 
 
 def perror(msg):
@@ -55,11 +91,11 @@ def cut_bom(s: str):
     return s[len(bom):] if s.startswith(bom) else s
 
 
-def to_float(s: str, def_val=0.0):
+def to_float(s: str, fallback=0.0):
     try:
         return float(s)
     except ValueError:
-        return def_val
+        return fallback
 
 
 def md5_hex(s: str) -> str:
@@ -71,8 +107,7 @@ def md5_hex(s: str) -> str:
 def random_pause(target_pause: float):
     return random.uniform(
         target_pause - target_pause * 0.5,
-        target_pause + target_pause * 0.5
-    )
+        target_pause + target_pause * 0.5)
 
 
 def select_one_text_required(root: Tag, selector: str):
@@ -104,14 +139,20 @@ def safe_file_name(title: str, url: str):
 class Browser:
     def get_text(self, url: str, headers: Dict = None, content_type: str = None):
         headers = self._prepare_headers(headers)
+        log.debug(f'Requesting GET {url}, headers: {headers}')
         response = requests.get(url, headers=headers)
+        log.debug(f'Response: {response.status_code} {response.reason}')
+        log.debug(f'Headers: {response.headers}')
         self._validate_response(response, url, content_type)
         return response.text
 
     def download(self, url, fpath, headers: Dict = None, content_type: str = None):
-        headers = self._prepare_headers(headers)
         progress(f'Скачиваю {url}')
+        headers = self._prepare_headers(headers)
+        log.debug(f'Requesting GET {url}, headers: {headers}')
         response = requests.get(url, stream=True, headers=headers)
+        log.debug(f'Response: {response.status_code} {response.reason}')
+        log.debug(f'Headers: {response.headers}')
         self._validate_response(response, url, None)
         mkdirs_for_regular_file(fpath)
         with open(fpath, 'wb') as fd:
