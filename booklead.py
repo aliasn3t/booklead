@@ -79,8 +79,8 @@ def prlDl(url):
             book = book_json['diva']['1']['options']
     json_text = bro.get_text(book['objectData'])
     book_data = json.loads(json_text)
-    ptext(' ─ Каталог для загрузки: {book_data["item_title"]}')
     book_title = safe_file_name(book_data['item_title'], url)
+    ptext(f' ─ Каталог для загрузки: {book_title}')
     pages = book_data['pgs']
     for idx, page in enumerate(pages):
         img_url = 'https://content.prlib.ru/fcgi-bin/iipsrv.fcgi?FIF={}/{}&WID={}&CVT=jpeg'.format(
@@ -151,6 +151,7 @@ def collect_urls():
 def main():
     try:
         global bro
+        log.debug('Программа стартовала')
         urls = collect_urls()
         ptext(f'Ссылок для загрузки: {len(urls)}')
         pause = 0
@@ -167,10 +168,12 @@ def main():
                 makePdf(pdf_path, img_folder_full, img_ext)
                 ptext(f' - Файл сохранён: {pdf_path}')
     except KeyboardInterrupt:
-        perror('Загрузка прервана')
+        perror('Загрузка прервана пользователем')
     except Exception as e:
         log.exception('main failed')
         perror(e)
+    finally:
+        log.debug('Программа завершена')
 
 
 if __name__ == '__main__':

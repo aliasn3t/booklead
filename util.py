@@ -51,8 +51,6 @@ def _setup_logging():
         console_handler.setFormatter(log_formatter)
         root_logger.addHandler(console_handler)
 
-    logging.debug('using LOG_FILE: %s', LOG_FILE)
-
 
 def get_logger(name=None):
     if not logging_set_up:
@@ -182,9 +180,11 @@ class Browser:
                  headers: Dict = None,
                  content_type: Union[str, Pattern] = None,
                  skip_if_file_exists=False):
+        global last_time_connected
         progress(f'Скачиваю {url}')
         if skip_if_file_exists and os.path.exists(fpath) and os.stat(fpath).st_size > 0:
             log.debug(f'Пропускаем уже скачанный файл: {fpath}')
+            last_time_connected = None
             return
         headers = self._prepare_headers(headers)
         log.debug(f'Requesting GET {url}, headers: {headers}')
