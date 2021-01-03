@@ -7,6 +7,7 @@ import hashlib
 import logging
 import os
 import random
+import re
 import shutil
 import sys
 import time
@@ -149,9 +150,13 @@ def select_one_attr_required(root: Tag, selector: str, attr_name: str):
     return val
 
 
-def safe_file_name(title: str, url: str = None):
-    # todo implement
-    return title
+def safe_file_name(value: str):
+    if not value:
+        return value
+    value = re.sub(r'[^\w\s()\[\]{}.,-]+', ' ', value, flags=re.UNICODE)
+    value = re.sub(r'[\s]+', ' ', value)
+    value = value.strip(' \t.,')  # точка на конце запрещена в Windows
+    return value
 
 
 last_time_connected: Optional[datetime.datetime] = None
@@ -167,7 +172,7 @@ def pausable(func):
         else:
             pause = 0
         if pause > 0:
-            log.info(f'Sleeping for {pause} s')
+            log.info(f'Сплю %.3f сек' % pause)
             time.sleep(pause)
         last_time_connected = datetime.datetime.now()
         return func(*args, **kwargs)
@@ -182,10 +187,11 @@ class Browser:
     @pausable
     def get_text(self, url: str, headers: Dict = None, content_type: str = None):
         headers = self._prepare_headers(headers)
-        log.info(f'Requesting GET {url}, headers: {headers}')
+        log.info(f'Запрашиваю GET {url}')
+        log.info(f'Заголовки: {headers}')
         response = requests.get(url, headers=headers)
-        log.info(f'Response: {response.status_code} {response.reason}')
-        log.info(f'Headers: {response.headers}')
+        log.info(f'Ответ: {response.status_code} {response.reason}')
+        log.info(f'Заголовки: {response.headers}')
         self._validate_response(response, url, content_type)
         return response.text
 
@@ -198,14 +204,15 @@ class Browser:
         global last_time_connected
         progress(f' - Скачиваю {url}')
         if skip_if_file_exists and os.path.exists(fpath) and os.stat(fpath).st_size > 0:
-            log.info(f'Пропускаем уже скачанный файл: {fpath}')
+            log.info(f'Пропускаю скачанный файл: {fpath}')
             last_time_connected = None
             return
         headers = self._prepare_headers(headers)
-        log.info(f'Requesting GET {url}, headers: {headers}')
+        log.info(f'Запрашиваю GET {url}')
+        log.info(f'Заголовки: {headers}')
         response = requests.get(url, stream=True, headers=headers)
-        log.info(f'Response: {response.status_code} {response.reason}')
-        log.info(f'Headers: {response.headers}')
+        log.info(f'Ответ: {response.status_code} {response.reason}')
+        log.info(f'Заголовки: {response.headers}')
         self._validate_response(response, url, content_type)
         mkdirs_for_regular_file(fpath)
         with open(fpath, 'wb') as fd:
@@ -230,3 +237,7 @@ class Browser:
                 else:
                     if actual_ct != expected_ct:
                         perror(f'Некорректный content-type {actual_ct} по адресу {url}')
+
+
+if __name__ == '__main__':
+    print(safe_file_name("  Привет  -.—.–  Москва 1989 XVII () {} [] ,. Hello ?!|/\\ - ӘәӨөҮү  "))

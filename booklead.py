@@ -51,22 +51,23 @@ def saveImage(url, img_id, folder, ext, referer):
 def eshplDl(url):
     ext = eshplDl_params['ext']
     quality = eshplDl_params['quality']
-    book_id = md5_hex(url).upper()
     domain = urllib.parse.urlsplit(url).netloc
 
     html_text = bro.get_text(url)
     soup = BeautifulSoup(html_text, 'html.parser')
+    title = select_one_text_optional(soup, 'title') or md5_hex(url)
+    title = safe_file_name(title)
     for script in soup.findAll('script'):
         st = str(script)
         if 'initDocview' in st:
             book_json = json.loads(st[st.find('{"'): st.find(')')])
-    ptext(f' ─ Каталог для загрузки: {book_id}')
+    ptext(f' ─ Каталог для загрузки: {title}')
     pages = book_json['pages']
     for idx, page in enumerate(pages):
         img_url = f'http://{domain}/pages/{page["id"]}/zooms/{quality}'
-        saveImage(img_url, idx + 1, book_id, ext, url)
+        saveImage(img_url, idx + 1, title, ext, url)
         progress(f' ─ Прогресс: {idx + 1} из {len(pages)} стр.')
-    return book_id, ext
+    return title, ext
 
 
 def prlDl(url):
@@ -78,9 +79,9 @@ def prlDl(url):
     ext = prlDl_params['ext']
     html_text = bro.get_text(url)
     soup = BeautifulSoup(html_text, 'html.parser')
-    book_title = safe_file_name(
-        select_one_text_optional(soup, 'h1') or md5_hex(url))
-    ptext(f' ─ Каталог для загрузки: {book_title}')
+    title = select_one_text_optional(soup, 'h1') or md5_hex(url)
+    title = safe_file_name(title)
+    ptext(f' ─ Каталог для загрузки: {title}')
     for script in soup.findAll('script'):
         st = str(script)
         if 'jQuery.extend' in st:
@@ -92,9 +93,9 @@ def prlDl(url):
     for idx, page in enumerate(pages):
         img_url = 'https://content.prlib.ru/fcgi-bin/iipsrv.fcgi?FIF={}/{}&WID={}&CVT=jpeg'.format(
             book['imageDir'], page['f'], page['d'][len(page['d']) - 1]['w'])
-        saveImage(img_url, idx + 1, book_title, ext, url)
+        saveImage(img_url, idx + 1, title, ext, url)
         progress(f' ─ Прогресс: {idx + 1} из {len(pages)} стр.')
-    return book_title, ext
+    return title, ext
 
 
 def unatlib_download(url):
@@ -107,8 +108,8 @@ def unatlib_download(url):
     """
     html_text = bro.get_text(url)
     soup = BeautifulSoup(html_text, 'html.parser')
-    title = select_one_text_required(soup, 'title')
-    title = safe_file_name(title, url)
+    title = select_one_text_required(soup, 'title') or md5_hex(url)
+    title = safe_file_name(title)
     pdf_href = select_one_attr_required(soup, '#dsview', 'href')
     pdf_url = f'https://elibrary.unatlib.ru{pdf_href}'
     headers = {'Referer': 'https://elibrary.unatlib.ru/build/pdf.worker.js'}
@@ -128,7 +129,7 @@ domains = {
 
 def download_book(url):
     try:
-        log.info(f'Downloading book {url}')
+        log.info(f'Скачиваю книгу {url}')
         host = urllib.parse.urlsplit(url)
         if not host.hostname:
             perror(f'Некорректный урл: {url}')
@@ -140,7 +141,7 @@ def download_book(url):
         ptext(f'Cсылка: {url}')
         return site_downloader(url)
     except Exception as e:
-        log.exception('download_book failed')
+        log.exception('Перехвачена ошибка в download_book')
         perror(e)
         return None
 
@@ -180,7 +181,7 @@ def main():
     except KeyboardInterrupt:
         perror('Загрузка прервана пользователем')
     except Exception as e:
-        log.exception('main failed')
+        log.exception('Перехвачена ошибка в main')
         perror(e)
     finally:
         log.info('Программа завершена')
