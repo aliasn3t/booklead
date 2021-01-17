@@ -141,3 +141,4 @@ cython_debug/
 books/
 *.txt
 !history.txt
+/work/
