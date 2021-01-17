@@ -1,3 +1,4 @@
 beautifulsoup4==4.9.0
 img2pdf==0.3.6
 requests==2.25.1
+pygit2==1.4.0

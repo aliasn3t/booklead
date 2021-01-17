@@ -29,7 +29,7 @@ user_agents = [
 ]
 
 
-LOG_FILE = 'booklead.log'
+LOG_FILE = 'log.txt'
 logging_set_up = False
 
 
