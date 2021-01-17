@@ -1,18 +1,26 @@
 # booklead
 Утилита для загрузки книг из интернет-библиотек
 
-##### Поддерживаемые ресурсы:
+## Поддерживаемые ресурсы:
+
 * elib.shpl.ru - электронная библиотека ГПИБ
 * docs.historyrussia.org - электронная библиотека исторических документов
 * prlib.ru - президентская библиотека имени Б.Н. Ельцина
 * elibrary.unatlib.ru - национальная электронная библиотека Удмуртской республики
 
-#### Запуск
+## Установка под Windows
+
+- Скачать и распаковать https://github.com/zencd/booklead/archive/master.zip
+- В консоли Windows запустить `booklead.bat` 
+
+## Запуск
+
 Для **Windows** доступны бинарные сборки в разделе [Releases](https://github.com/aliasn3t/booklead/releases)  
 Для запуска кода потребуется Python с модулями **img2pdf** и **beautifulsoup4**  
 Установка модулей: `python3 -m pip install -r requirements.txt`  
 
-#### Использование
+## Использование
+
 `--list` загрузка книг по ссылкам из файла  
 Пример использования: `booklead --list books.txt`  
 Пример содержимого **books.txt**:  

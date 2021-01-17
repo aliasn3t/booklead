@@ -8,7 +8,7 @@ set PY_VER=python-3.9.1
 set PY_EXE=%APP_DIR%\work\%PY_VER%\python.exe
 set PY_URL=https://github.com/zencd/git-distribution/releases/download/python-3.9.1/python-3.9.1.exe
 set PY_SFX=%APP_DIR%\work\%PY_VER%.exe
-set MAIN_PY=%APP_DIR%\main.py
+set MAIN_PY=%APP_DIR%\booklead.py
 
 if not exist "%WORK_DIR%" mkdir "%WORK_DIR%"
 
