@@ -118,12 +118,48 @@ def unatlib_download(url):
     return None  # all done, no further action needed
 
 
+def gwarDL(url): 
+    """
+    Первая мировая война 1914-1918 - Информационный портал
+    Формат - серия изображений
+    Пример урла книги (HTML) - https://gwar.mil.ru/documents/view/?id=88000899
+    """
+    json_url = 'https://gwar.mil.ru/gt_data/?builder=DocumentView'
+    book_id = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)['id'][0]
+    title = md5_hex(url)
+    ext = 'jpg'
+
+    request_data = {
+        "indices": "gwar_document",
+        "entities": "document_image",
+        "queryFields": {
+            "document_id": book_id
+            },
+        "from": 0,
+        "size": 10000,
+        "builderType": "DocumentView"
+        }
+
+    request_headers = {'referer': url}
+
+    json_text = bro.post_text(json_url, request_headers, request_data)
+    book_data = json.loads(json_text)
+    pages = book_data['hits']['hits']
+    for idx, page in enumerate(pages):
+        img_url = 'https://cdn.gwar.mil.ru/imagesfww/{}'.format(
+            page['_source']['path'])
+        saveImage(img_url, idx + 1, title, ext, url)
+        progress(f' ─ Прогресс: {idx + 1} из {len(pages)} стр.')
+    return title, ext
+
+
 domains = {
     'elib.shpl.ru': eshplDl,
     'docs.historyrussia.org': eshplDl,
     'prlib.ru': prlDl,
     'www.prlib.ru': prlDl,
     'elibrary.unatlib.ru': unatlib_download,
+    'gwar.mil.ru': gwarDL
 }
 
 

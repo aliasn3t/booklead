@@ -140,5 +140,3 @@ cython_debug/
 .idea/
 books/
 *.txt
-!history.txt
-/work/

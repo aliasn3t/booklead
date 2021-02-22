@@ -7,16 +7,12 @@
 * docs.historyrussia.org - электронная библиотека исторических документов
 * prlib.ru - президентская библиотека имени Б.Н. Ельцина
 * elibrary.unatlib.ru - национальная электронная библиотека Удмуртской республики
-
-## Установка под Windows
-
-- Скачать и распаковать https://github.com/zencd/booklead/archive/master.zip
-- В консоли Windows запустить `booklead.bat` 
+* gwar.mil.ru - информационный портал о первой мировой войне 1914-1918
 
 ## Запуск
 
 Для **Windows** доступны бинарные сборки в разделе [Releases](https://github.com/aliasn3t/booklead/releases)  
-Для запуска кода потребуется Python с модулями **img2pdf** и **beautifulsoup4**  
+Для запуска кода потребуется Python с модулями **img2pdf** **requests** и **beautifulsoup4**  
 Установка модулей: `python3 -m pip install -r requirements.txt`  
 
 ## Использование

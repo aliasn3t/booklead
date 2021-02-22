@@ -16,6 +16,7 @@ import requests
 from bs4 import Tag
 from requests import Response
 from typing import Dict, Optional, Pattern, Union
+import json
 
 user_agents = [
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.78 Safari/537.36',
@@ -190,6 +191,17 @@ class Browser:
         log.info(f'Запрашиваю GET {url}')
         log.info(f'Заголовки: {headers}')
         response = requests.get(url, headers=headers)
+        log.info(f'Ответ: {response.status_code} {response.reason}')
+        log.info(f'Заголовки: {response.headers}')
+        self._validate_response(response, url, content_type)
+        return response.text
+
+    @pausable
+    def post_text(self, url: str, headers: Dict = None, data: Dict = None, content_type: str = None):
+        headers = self._prepare_headers(headers)
+        log.info(f'Запрашиваю POST {url}')
+        log.info(f'Заголовки: {headers}')
+        response = requests.post(url, headers=headers, data=json.dumps(data))
         log.info(f'Ответ: {response.status_code} {response.reason}')
         log.info(f'Заголовки: {response.headers}')
         self._validate_response(response, url, content_type)
