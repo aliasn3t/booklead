@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 
 from util import get_logger
 from util import md5_hex, to_float, cut_bom, perror, progress, ptext, safe_file_name, Browser, select_one_text_optional
-from util import select_one_text_required, select_one_attr_required
+from util import select_one_text_required, select_one_attr_required, gwar_fix_json
 
 log = get_logger(__name__)
 
@@ -121,34 +121,95 @@ def unatlib_download(url):
 def gwarDL(url): 
     """
     Первая мировая война 1914-1918 - Информационный портал
-    Формат - серия изображений
-    Пример урла книги (HTML) - https://gwar.mil.ru/documents/view/?id=88000899
+    Формат - серия изображений/PDF
+    Пример урла type 1 (HTML) - https://gwar.mil.ru/heroes/document/50000001/
+    Пример урла type 2 (HTML) - https://gwar.mil.ru/documents/view/?id=88000899 или https://gwar.mil.ru/documents/view/88009650/
+    Пример урла type 3 (PDF) - https://gwar.mil.ru/books/105501406
     """
-    json_url = 'https://gwar.mil.ru/gt_data/?builder=DocumentView'
-    book_id = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)['id'][0]
-    title = md5_hex(url)
-    ext = 'jpg'
+    ext = 'jpg' # пока так
+    json_url = ''
+    request_data = {}
 
-    request_data = {
-        "indices": "gwar_document",
-        "entities": "document_image",
-        "queryFields": {
-            "document_id": book_id
-            },
-        "from": 0,
-        "size": 10000,
-        "builderType": "DocumentView"
-        }
+    html_text = bro.get_text(url)
+    soup = BeautifulSoup(html_text, 'html.parser')
 
+    title = select_one_text_required(soup, 'title') or md5_hex(url)
+    title = safe_file_name(title)
+
+    for script in soup.findAll('script'):
+        st = str(script)
+        if 'var parentId' in st: # type 1
+            page_json = st[st.find('{'): st.find(';\n</')]
+            page_json_fix = gwar_fix_json(page_json, True)
+            book_id = page_json_fix['id']
+            boxes_id = page_json_fix['documents_pages']['deals_boxes_id']
+
+            request_data = {
+                "indices": ["gwar"],
+                "entities": ["stranitsa"],
+                "queryFields": {
+                    "deal_box_id": boxes_id
+                    },
+                "from": 0,
+                "size": 3000,
+                "builderType": "HeroesStranitsa"
+                }
+            
+            json_url = 'https://gwar.mil.ru/gt_data/?builder=HeroesStranitsa'
+        elif 'var documentjs' in st: # type 2
+            page_json = st[st.find('{\''): st.find('</script>')]
+            page_json_fix = gwar_fix_json(page_json)
+            book_id = page_json_fix['id']
+
+            if (page_json_fix['hits']['hits'][0]['_type'] == 'document'):
+                query_fields = {
+                    "document_id": book_id,
+                    }
+            elif (page_json_fix['hits']['hits'][0]['_type'] == 'deal'):
+                query_fields = {
+                    "document_id": book_id,
+                    "deal_box_id": book_id
+                    }
+
+            request_data = {
+                "indices": "gwar_document",
+                "entities": "document_image",
+                "queryFields": query_fields,
+                "from": 0,
+                "size": 10000,
+                "builderType": "DocumentView"
+                }
+
+            json_url = 'https://gwar.mil.ru/gt_data/?builder=DocumentView'
+        elif 'window.$.fn.initDetailBook();' in st: # type 3
+            for item in soup.find_all(attrs={"data-id": True}):
+                pdf_href = item['data-id']
+                pdf_url = f'https://cdn.gwar.mil.ru/bookload/{pdf_href}.pdf'
+                headers = {'Referer': url}
+                pdf_file = os.path.join(BOOK_DIR, f'{title}.pdf')
+                bro.download(pdf_url, pdf_file, headers, skip_if_file_exists=True)
+            return None  # all done, no further action needed
+
+    ptext(f' ─ Каталог для загрузки: {title}')
     request_headers = {'referer': url}
 
     json_text = bro.post_text(json_url, request_headers, request_data)
     book_data = json.loads(json_text)
     pages = book_data['hits']['hits']
     for idx, page in enumerate(pages):
-        img_url = 'https://cdn.gwar.mil.ru/imagesfww/{}'.format(
-            page['_source']['path'])
-        saveImage(img_url, idx + 1, title, ext, url)
+        if (page['_type'] == 'document_image'):
+            image_url = page['_source']['path']
+        elif (page['_type'] == 'stranitsa'):
+            image_url = page['_source']['obraz_s_oblastyami']
+
+        if (image_url.find('<i src="') >= 0):
+            regexp = re.compile(r'<i src="(\S*?)"')
+            if regexp.findall(image_url): 
+                image_url = regexp.findall(image_url)[0]
+
+        img_url = 'https://cdn.gwar.mil.ru/imagesfww/{}'.format( # либо ...ru/imageloadfull/
+            image_url)
+        saveImage(img_url, idx + 1, title, ext, 'https://gwar.mil.ru/')
         progress(f' ─ Прогресс: {idx + 1} из {len(pages)} стр.')
     return title, ext
 

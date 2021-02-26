@@ -12,7 +12,7 @@
 ## Запуск
 
 Для **Windows** доступны бинарные сборки в разделе [Releases](https://github.com/aliasn3t/booklead/releases)  
-Для запуска кода потребуется Python с модулями **img2pdf** **requests** и **beautifulsoup4**  
+Для запуска кода потребуется Python с модулями **img2pdf**, **requests** и **beautifulsoup4**  
 Установка модулей: `python3 -m pip install -r requirements.txt`  
 
 ## Использование

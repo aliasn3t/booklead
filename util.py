@@ -109,6 +109,17 @@ def md5_hex(s: str) -> str:
     return md5.hexdigest()
 
 
+def gwar_fix_json(s: str, a: bool = False) -> str:
+    s = ' '.join(s.split())
+    s = s.replace('"', "\'")
+    s = s.replace("'", '"')
+    if a:
+        # https://stackoverflow.com/questions/50947760/how-to-fix-json-key-values-without-double-quotes
+        s = re.sub("(\w+):", r'"\1":', s)
+    json_s = json.loads(s)
+    return json_s
+
+
 def random_pause(target_pause: float):
     return random.uniform(
         target_pause - target_pause * 0.5,
