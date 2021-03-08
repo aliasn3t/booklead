@@ -190,7 +190,8 @@ def gwarDL(url):
                 bro.download(pdf_url, pdf_file, headers, skip_if_file_exists=True)
             return None  # all done, no further action needed
 
-    ptext(f' ─ Каталог для загрузки: {title}')
+    book_dir = '{}_{}'.format(title, book_id)
+    ptext(f' ─ Каталог для загрузки: {book_dir}')
     request_headers = {'referer': url}
 
     json_text = bro.post_text(json_url, request_headers, request_data)
@@ -209,7 +210,7 @@ def gwarDL(url):
 
         img_url = 'https://cdn.gwar.mil.ru/imagesfww/{}'.format( # либо ...ru/imageloadfull/
             image_url)
-        saveImage(img_url, idx + 1, title, ext, 'https://gwar.mil.ru/')
+        saveImage(img_url, idx + 1, book_dir, ext, 'https://gwar.mil.ru/')
         progress(f' ─ Прогресс: {idx + 1} из {len(pages)} стр.')
     return title, ext
 
@@ -276,12 +277,12 @@ def main():
                 makePdf(pdf_path, img_folder_full, img_ext)
                 ptext(f' - Файл сохранён: {pdf_path}')
     except KeyboardInterrupt:
-        perror('Загрузка прервана пользователем')
+        perror('\nЗагрузка прервана пользователем')
     except Exception as e:
-        log.exception('Перехвачена ошибка в main')
+        log.exception('\nПерехвачена ошибка в main')
         perror(e)
     finally:
-        log.info('Программа завершена')
+        log.info('\nПрограмма завершена')
 
 
 if __name__ == '__main__':
