@@ -190,7 +190,8 @@ def gwarDL(url):
                 bro.download(pdf_url, pdf_file, headers, skip_if_file_exists=True)
             return None  # all done, no further action needed
 
-    book_dir = '{}_{}'.format(title, book_id)
+    book_dir = ('{}_{}'.format(book_id, title))[0:224]
+
     ptext(f' ─ Каталог для загрузки: {book_dir}')
     request_headers = {'referer': url}
 
